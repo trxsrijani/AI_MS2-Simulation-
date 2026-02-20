@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Naval Tactical Display</title>
+
+<style>
+body {
+    margin: 0;
+    background: black;
+    overflow: hidden;
+    display: flex;
+    height: 100vh;
+}
+
+/* LEFT SIDE - VIDEO (90%) */
+#videoContainer {
+    width: 90%;
+    height: 100%;
+}
+
+#videoStream {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* IMPORTANT - no weird cropping */
+    background: black;
+}
+
+/* RIGHT SIDE - SENSOR PANEL (10%) */
+#sensorPanel {
+    width: 10%;
+    height: 100%;
+    background: #000;
+    border-left: 1px solid #00ffcc;
+    color: #00ffcc;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+#sensorPanel h3 {
+    margin-top: 0;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #00ffcc;
+    padding-bottom: 8px;
+}
+
+.dataLine {
+    margin-bottom: 12px;
+    word-wrap: break-word;
+}
+
+.red { color: red; font-weight: bold; }
+.yellow { color: yellow; font-weight: bold; }
+.green { color: #00ffcc; }
+</style>
+</head>
+
+<body>
+
+<div id="videoContainer">
+    <img id="videoStream" src="{{ url_for('video') }}">
+</div>
+
+<div id="sensorPanel">
+    <h3>TARGET DATA</h3>
+
+    <div class="dataLine">ID: <span id="id">-</span></div>
+    <div class="dataLine">Class: <span id="class">-</span></div>
+    <div class="dataLine">Speed: <span id="speed">-</span></div>
+    <div class="dataLine">Course: <span id="course">-</span></div>
+    <div class="dataLine">Range: <span id="range">-</span></div>
+    <div class="dataLine">CPA: <span id="cpa">-</span></div>
+    <div class="dataLine">Threat: <span id="threat">-</span></div>
+    <div class="dataLine">Collision: <span id="collision">-</span></div>
+</div>
+
+<script>
+let objects = [];
+
+// Fetch detected objects
+function updateObjects() {
+    fetch("/objects")
+        .then(res => res.json())
+        .then(data => {
+            objects = data;
+        });
+}
+setInterval(updateObjects, 300);
+
+// Click detection with proper scaling
+document.getElementById("videoStream").addEventListener("click", function(event) {
+
+    const rect = this.getBoundingClientRect();
+
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+
+    const actualWidth = this.naturalWidth;
+    const actualHeight = this.naturalHeight;
+
+    const scaleX = actualWidth / displayWidth;
+    const scaleY = actualHeight / displayHeight;
+
+    const clickX = (event.clientX - rect.left) * scaleX;
+    const clickY = (event.clientY - rect.top) * scaleY;
+
+    objects.forEach(obj => {
+        if (clickX >= obj.x1 && clickX <= obj.x2 &&
+            clickY >= obj.y1 && clickY <= obj.y2) {
+
+            console.log("Clicked object ID:", obj.id);
+
+            fetch("/select_object", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({id: obj.id})
+            });
+        }
+    });
+});
+
+// Update sensor panel
+function updateSensorData() {
+    fetch("/sensor_data")
+        .then(res => res.json())
+        .then(data => {
+
+            document.getElementById("id").innerText = data.id || "-";
+            document.getElementById("class").innerText = data.class || "-";
+            document.getElementById("speed").innerText = data.speed || "-";
+            document.getElementById("course").innerText = data.course || "-";
+            document.getElementById("range").innerText = data.range || "-";
+            document.getElementById("cpa").innerText = data.cpa || "-";
+            document.getElementById("threat").innerText = data.threat || "-";
+
+            let collisionElem = document.getElementById("collision");
+            collisionElem.innerText = data.collision || "-";
+            collisionElem.className = "";
+
+            if (data.collision === "RED")
+                collisionElem.classList.add("red");
+            else if (data.collision === "YELLOW")
+                collisionElem.classList.add("yellow");
+            else
+                collisionElem.classList.add("green");
+        });
+}
+setInterval(updateSensorData, 500);
+</script>
+
+</body>
+</html>
