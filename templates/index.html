@@ -66,12 +66,29 @@ body {
 <div id="sensorPanel">
     <h3>TARGET DATA</h3>
 
-    <div class="dataLine">ID: <span id="id">-</span></div>
+    <!-- <div class="dataLine">ID: <span id="id">-</span></div>
     <div class="dataLine">Class: <span id="class">-</span></div>
     <div class="dataLine">Speed: <span id="speed">-</span></div>
     <div class="dataLine">Course: <span id="course">-</span></div>
     <div class="dataLine">Range: <span id="range">-</span></div>
     <div class="dataLine">CPA: <span id="cpa">-</span></div>
+    <div class="dataLine">Threat: <span id="threat">-</span></div>
+    <div class="dataLine">Collision: <span id="collision">-</span></div> -->
+
+    <div class="dataLine">ID: <span id="id">-</span></div>
+    <div class="dataLine">Class: <span id="class">-</span></div>
+    <div class="dataLine">MMSI: <span id="mmsi">-</span></div>
+    <div class="dataLine">Navy Type: <span id="navy_type">-</span></div>
+
+    <div class="dataLine">Bearing (True): <span id="bearing_degree">-</span> °</div>
+    <div class="dataLine">Bearing (Relative): <span id="bearing_relative_degree">-</span> °</div>
+
+    <div class="dataLine">Speed: <span id="speed">-</span> kts</div>
+    <div class="dataLine">Course: <span id="course">-</span> °T</div>
+
+    <div class="dataLine">Range: <span id="range">-</span> m</div>
+    <div class="dataLine">CPA: <span id="cpa">-</span> m</div>
+
     <div class="dataLine">Threat: <span id="threat">-</span></div>
     <div class="dataLine">Collision: <span id="collision">-</span></div>
 </div>
@@ -122,19 +139,66 @@ document.getElementById("videoStream").addEventListener("click", function(event)
 });
 
 // Update sensor panel
+// function updateSensorData() {
+//     fetch("/sensor_data")
+//         .then(res => res.json())
+//         .then(data => {
+
+//             document.getElementById("id").innerText = data.id || "-";
+//             document.getElementById("class").innerText = data.class || "-";
+//             document.getElementById("speed").innerText = data.speed || "-";
+//             document.getElementById("course").innerText = data.course || "-";
+//             document.getElementById("range").innerText = data.range || "-";
+//             document.getElementById("cpa").innerText = data.cpa || "-";
+//             document.getElementById("threat").innerText = data.threat || "-";
+
+//             let collisionElem = document.getElementById("collision");
+//             collisionElem.innerText = data.collision || "-";
+//             collisionElem.className = "";
+
+//             if (data.collision === "RED")
+//                 collisionElem.classList.add("red");
+//             else if (data.collision === "YELLOW")
+//                 collisionElem.classList.add("yellow");
+//             else
+//                 collisionElem.classList.add("green");
+//         });
+// }
 function updateSensorData() {
     fetch("/sensor_data")
         .then(res => res.json())
         .then(data => {
 
+            // Identification
             document.getElementById("id").innerText = data.id || "-";
             document.getElementById("class").innerText = data.class || "-";
-            document.getElementById("speed").innerText = data.speed || "-";
-            document.getElementById("course").innerText = data.course || "-";
-            document.getElementById("range").innerText = data.range || "-";
-            document.getElementById("cpa").innerText = data.cpa || "-";
+            document.getElementById("mmsi").innerText = data.mmsi || "-";
+            document.getElementById("navy_type").innerText = data.navy_type || "-";
+
+            // Bearings
+            document.getElementById("bearing_degree").innerText =
+                data.bearing_degree ? data.bearing_degree.toFixed(1) : "-";
+
+            document.getElementById("bearing_relative_degree").innerText =
+                data.bearing_relative_degree ? data.bearing_relative_degree.toFixed(1) : "-";
+
+            // Motion
+            document.getElementById("speed").innerText =
+                data.speed ? data.speed.toFixed(1) : "-";
+
+            document.getElementById("course").innerText =
+                data.course ? data.course.toFixed(1) : "-";
+
+            // Tactical
+            document.getElementById("range").innerText =
+                data.range ? data.range.toFixed(1) : "-";
+
+            document.getElementById("cpa").innerText =
+                data.cpa ? data.cpa.toFixed(1) : "-";
+
             document.getElementById("threat").innerText = data.threat || "-";
 
+            // Collision Status (Color Coding)
             let collisionElem = document.getElementById("collision");
             collisionElem.innerText = data.collision || "-";
             collisionElem.className = "";

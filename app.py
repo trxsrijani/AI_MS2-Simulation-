@@ -6,14 +6,14 @@ from ultralytics import YOLO
 # -------------------------------------------------
 # LOAD YOLO MODEL
 # -------------------------------------------------
-model = YOLO(r"/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/best5.pt")
+model = YOLO(r"/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/best5.pt")
 
 app = Flask(__name__)
 
 # -------------------------------------------------
 # LOAD SENSOR JSON
 # -------------------------------------------------
-with open("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/sensor_data.json") as f:
+with open("/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/sensor_data.json") as f:
     fusion_data = json.load(f)
 
 targets = fusion_data["targets"]
@@ -51,119 +51,155 @@ def generate_frames():
     global current_display_data
     global class_assignment_counter
 
-    cap = cv2.VideoCapture("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/naval_dock.mp4")
+    # cap = cv2.VideoCapture("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/naval_dock.mp4")
+    video_paths = [
+   
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation (1).mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (8).mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (7).mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (6).mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (3).mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
 
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
+    
+   
+   
+   
+]
+    for video_path in video_paths:
 
-        frame_objects = []
+        cap = cv2.VideoCapture(video_path)
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
 
-        results = model(frame, imgsz=640, conf=0.5, verbose=False)
+            frame_objects = []
 
-        for r in results:
-            for box in r.boxes:
+            results = model(frame, imgsz=640, conf=0.5, verbose=False)
 
-                cls_id = int(box.cls[0])
-                class_name = model.names[cls_id]
-                class_lower = class_name.lower()
+            for r in results:
+                for box in r.boxes:
 
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                center_x = (x1 + x2) // 2
-                center_y = (y1 + y2) // 2
+                    cls_id = int(box.cls[0])
+                    class_name = model.names[cls_id]
+                    class_lower = class_name.lower()
 
-                assigned_id = None
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    center_x = (x1 + x2) // 2
+                    center_y = (y1 + y2) // 2
 
-                # ---------------------------------
-                # SIMPLE TRACKING
-                # ---------------------------------
-                for obj_id, data in object_tracker.items():
-                    prev_x, prev_y = data["center"]
-                    if abs(center_x - prev_x) < 50 and abs(center_y - prev_y) < 50:
-                        assigned_id = obj_id
-                        object_tracker[obj_id]["center"] = (center_x, center_y)
-                        break
+                    assigned_id = None
 
-                # ---------------------------------
-                # NEW OBJECT
-                # ---------------------------------
-                if assigned_id is None:
+                    # ---------------------------------
+                    # SIMPLE TRACKING
+                    # ---------------------------------
+                    for obj_id, data in object_tracker.items():
+                        prev_x, prev_y = data["center"]
+                        if abs(center_x - prev_x) < 50 and abs(center_y - prev_y) < 50:
+                            assigned_id = obj_id
+                            object_tracker[obj_id]["center"] = (center_x, center_y)
+                            break
 
-                    assigned_id = next_object_id
+                    # ---------------------------------
+                    # NEW OBJECT
+                    # ---------------------------------
+                    if assigned_id is None:
 
-                    sim_target = None
+                        assigned_id = next_object_id
 
-                    # Assign from same class list
-                    if class_lower in targets_by_class:
+                        sim_target = None
 
-                        class_index = class_assignment_counter[class_lower]
+                        # Assign from same class list
+                        if class_lower in targets_by_class:
 
-                        if class_index < len(targets_by_class[class_lower]):
-                            sim_target = targets_by_class[class_lower][class_index]
-                            class_assignment_counter[class_lower] += 1
+                            class_index = class_assignment_counter[class_lower]
 
-                    object_tracker[assigned_id] = {
-                        "class": class_name,
-                        "center": (center_x, center_y),
-                        "sim_target": sim_target
-                    }
+                            if class_index < len(targets_by_class[class_lower]):
+                                sim_target = targets_by_class[class_lower][class_index]
+                                class_assignment_counter[class_lower] += 1
 
-                    next_object_id += 1
+                        object_tracker[assigned_id] = {
+                            "class": class_name,
+                            "center": (center_x, center_y),
+                            "sim_target": sim_target
+                        }
 
-                frame_objects.append({
-                    "id": assigned_id,
-                    "x1": x1,
-                    "y1": y1,
-                    "x2": x2,
-                    "y2": y2
-                })
+                        next_object_id += 1
 
-                # DRAW BOX
-                color = (0, 255, 255)
-                if assigned_id == selected_object_id:
-                    color = (0, 255, 0)
+                    frame_objects.append({
+                        "id": assigned_id,
+                        "x1": x1,
+                        "y1": y1,
+                        "x2": x2,
+                        "y2": y2
+                    })
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(frame,
-                            f"ID {assigned_id} - {class_name}",
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.6,
-                            color,
-                            2)
+                    # DRAW BOX
+                    color = (0, 255, 255)
+                    if assigned_id == selected_object_id:
+                        color = (0, 255, 0)
 
-        current_objects = frame_objects
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    cv2.putText(frame,
+                                f"ID {assigned_id} - {class_name}",
+                                (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                0.6,
+                                color,
+                                2)
 
-        # -------------------------------------------------
-        # FETCH SENSOR DATA FROM CLASS-MATCHED TARGET
-        # -------------------------------------------------
-        if selected_object_id is not None:
+            current_objects = frame_objects
 
-            if selected_object_id in object_tracker:
+            # -------------------------------------------------
+            # FETCH SENSOR DATA FROM CLASS-MATCHED TARGET
+            # -------------------------------------------------
+            if selected_object_id is not None:
 
-                sim_target = object_tracker[selected_object_id]["sim_target"]
+                if selected_object_id in object_tracker:
 
-                if sim_target:
+                    sim_target = object_tracker[selected_object_id]["sim_target"]
 
-                    current_display_data = {
-                        "id": selected_object_id,
-                        "class": sim_target["class"],
-                        "speed": sim_target["speed_kts"],
-                        "course": sim_target["course_deg_T"],
-                        "range": sim_target["range_m"],
-                        "cpa": sim_target["cpa_m"],
-                        "threat": sim_target["threat_level"],
-                        "collision": sim_target["collision_status"]
-                    }
+                    if sim_target:
 
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
+                        # current_display_data = {
+                        #     "id": selected_object_id,
+                        #     "class": sim_target["class"],
+                        #     "speed": sim_target["speed_kts"],
+                        #     "course": sim_target["course_deg_T"],
+                        #     "range": sim_target["range_m"],
+                        #     "cpa": sim_target["cpa_m"],
+                        #     "threat": sim_target["threat_level"],
+                        #     "collision": sim_target["collision_status"]
+                        # }
+                        current_display_data = {
+                            "id": selected_object_id,
+                            "class": sim_target["class"],
+                            "mmsi":sim_target["mmsi"],
+                            
+                            "bearing_degree":sim_target["bearing_deg_T"],
+                            "bearing_relative_degree":sim_target["bearing_relative_deg"],
 
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                            "speed": sim_target["speed_kts"],
+                            "course": sim_target["course_deg_T"],
 
-    cap.release()
+                            "range": sim_target["range_m"],
+                            "cpa": sim_target["cpa_m"],
+                            "threat": sim_target["threat_level"],
+                            "collision": sim_target["collision_status"],
+                            "navy_type": sim_target["navy_type"]
+                        }
+
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+
+            yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+        cap.release()
 
 
 # -------------------------------------------------
