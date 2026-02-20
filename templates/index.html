@@ -54,6 +54,58 @@ body {
 .red { color: red; font-weight: bold; }
 .yellow { color: yellow; font-weight: bold; }
 .green { color: #00ffcc; }
+
+#miniMap {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 320px;
+    height: 220px;
+    border: 3px solid #00ffcc;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+#miniMap.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+    border: none;
+}
+
+#routeFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+#closeMap {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #00ff88;
+    border: none;
+    padding: 10px 14px;
+    display: none;
+    z-index: 2000;
+}
+
+#expandMap {
+    position: absolute;
+    bottom: 90px;
+    right: 20px;
+    background: #00ff88;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 2000;
+}
+
 </style>
 </head>
 
@@ -62,6 +114,13 @@ body {
 <div id="videoContainer">
     <img id="videoStream" src="{{ url_for('video') }}">
 </div>
+
+<div id="miniMap">
+    <iframe id="routeFrame" src="http://192.168.0.175:5002/"></iframe>
+</div>
+
+<button id="expandMap">⛶</button>
+<button id="closeMap" style="display:none;">←</button>
 
 <div id="sensorPanel">
     <h3>TARGET DATA</h3>
@@ -148,6 +207,40 @@ function updateSensorData() {
         });
 }
 setInterval(updateSensorData, 500);
+
+const mini = document.getElementById("miniMap");
+const expand = document.getElementById("expandMap");
+const close = document.getElementById("closeMap");
+
+expand.onclick = () => {
+    mini.classList.add("fullscreen");
+    expand.style.display = "none";
+    close.style.display = "block";
+};
+
+close.onclick = () => {
+    mini.classList.remove("fullscreen");
+    close.style.display = "none";
+    expand.style.display = "block";
+};
+
+function enterFullscreen() {
+    const elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { // Safari
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE
+        elem.msRequestFullscreen();
+    }
+}
+
+// Trigger on first click anywhere
+document.addEventListener("click", function enableFS() {
+    enterFullscreen();
+    document.removeEventListener("click", enableFS);
+});
 </script>
 
 </body>

@@ -2,6 +2,7 @@ from flask import Flask, render_template, Response, jsonify, request
 import cv2
 import json
 from ultralytics import YOLO
+from flask_cors import CORS
 
 # -------------------------------------------------
 # LOAD YOLO MODEL
@@ -9,6 +10,7 @@ from ultralytics import YOLO
 model = YOLO(r"/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/best5.pt")
 
 app = Flask(__name__)
+CORS(app)
 
 # -------------------------------------------------
 # LOAD SENSOR JSON
@@ -122,7 +124,7 @@ def generate_frames():
                 # DRAW BOX
                 color = (0, 255, 255)
                 if assigned_id == selected_object_id:
-                    color = (0, 255, 0)
+                    color = (255, 0, 0)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame,
