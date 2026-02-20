@@ -2,15 +2,13 @@ from flask import Flask, render_template, Response, jsonify, request
 import cv2
 import json
 from ultralytics import YOLO
-from flask_cors import CORS
 
 # -------------------------------------------------
-# LOAD YOLO MODEL
+# LOAD MODEL
 # -------------------------------------------------
 model = YOLO(r"/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/best5.pt")
 
 app = Flask(__name__)
-CORS(app)
 
 # -------------------------------------------------
 # LOAD SENSOR JSON
@@ -21,37 +19,25 @@ with open("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/sensor_data.json") as f:
 targets = fusion_data["targets"]
 
 # -------------------------------------------------
-# GROUP TARGETS BY CLASS
-# -------------------------------------------------
-targets_by_class = {}
-
-for t in targets:
-    cls = t["class"].lower()
-    if cls not in targets_by_class:
-        targets_by_class[cls] = []
-    targets_by_class[cls].append(t)
-
-# Track how many of each class assigned
-class_assignment_counter = {cls: 0 for cls in targets_by_class.keys()}
-
-# -------------------------------------------------
 # GLOBALS
 # -------------------------------------------------
-object_tracker = {}
-next_object_id = 1
 current_objects = []
 selected_object_id = None
 current_display_data = {}
 
+# Track management
+track_metadata = {}      # track_id -> {last_seen, sim_id}
+frame_counter = 0
+STALE_THRESHOLD = 30     # frames (~1 sec if 30fps)
+
 # -------------------------------------------------
-# VIDEO + DETECTION STREAM
+# VIDEO + YOLO TRACKING
 # -------------------------------------------------
 def generate_frames():
 
-    global object_tracker, next_object_id
     global current_objects, selected_object_id
-    global current_display_data
-    global class_assignment_counter
+    global current_display_data, track_metadata
+    global frame_counter
 
     cap = cv2.VideoCapture("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/naval_dock.mp4")
 
@@ -60,75 +46,64 @@ def generate_frames():
         if not success:
             break
 
+        frame_counter += 1
         frame_objects = []
+        active_track_ids = set()
 
-        results = model(frame, imgsz=640, conf=0.5, verbose=False)
+        results = model.track(frame, persist=True, conf=0.5)
 
         for r in results:
             for box in r.boxes:
 
+                if box.id is None:
+                    continue
+
+                track_id = int(box.id[0])
                 cls_id = int(box.cls[0])
                 class_name = model.names[cls_id]
-                class_lower = class_name.lower()
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                center_x = (x1 + x2) // 2
-                center_y = (y1 + y2) // 2
 
-                assigned_id = None
+                active_track_ids.add(track_id)
 
-                # ---------------------------------
-                # SIMPLE TRACKING
-                # ---------------------------------
-                for obj_id, data in object_tracker.items():
-                    prev_x, prev_y = data["center"]
-                    if abs(center_x - prev_x) < 50 and abs(center_y - prev_y) < 50:
-                        assigned_id = obj_id
-                        object_tracker[obj_id]["center"] = (center_x, center_y)
-                        break
+                # -------------------------------------------------
+                # NEW TRACK → ASSIGN SIM TARGET
+                # -------------------------------------------------
+                if track_id not in track_metadata:
 
-                # ---------------------------------
-                # NEW OBJECT
-                # ---------------------------------
-                if assigned_id is None:
+                    sim_target_id = None
 
-                    assigned_id = next_object_id
+                    for t in targets:
+                        if t["class"].lower() == class_name.lower():
+                            if t["object_id"] not in [v["sim_id"] for v in track_metadata.values()]:
+                                sim_target_id = t["object_id"]
+                                break
 
-                    sim_target = None
-
-                    # Assign from same class list
-                    if class_lower in targets_by_class:
-
-                        class_index = class_assignment_counter[class_lower]
-
-                        if class_index < len(targets_by_class[class_lower]):
-                            sim_target = targets_by_class[class_lower][class_index]
-                            class_assignment_counter[class_lower] += 1
-
-                    object_tracker[assigned_id] = {
-                        "class": class_name,
-                        "center": (center_x, center_y),
-                        "sim_target": sim_target
+                    track_metadata[track_id] = {
+                        "last_seen": frame_counter,
+                        "sim_id": sim_target_id
                     }
 
-                    next_object_id += 1
+                else:
+                    # Update last seen
+                    track_metadata[track_id]["last_seen"] = frame_counter
 
                 frame_objects.append({
-                    "id": assigned_id,
+                    "id": track_id,
                     "x1": x1,
                     "y1": y1,
                     "x2": x2,
                     "y2": y2
                 })
 
-                # DRAW BOX
+                # Draw box
                 color = (0, 255, 255)
-                if assigned_id == selected_object_id:
-                    color = (255, 0, 0)
+                if track_id == selected_object_id:
+                    color = (0, 255, 0)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame,
-                            f"ID {assigned_id} - {class_name}",
+                            f"ID {track_id} - {class_name}",
                             (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX,
                             0.6,
@@ -138,25 +113,42 @@ def generate_frames():
         current_objects = frame_objects
 
         # -------------------------------------------------
-        # FETCH SENSOR DATA FROM CLASS-MATCHED TARGET
+        # CLEANUP STALE TRACKS
+        # -------------------------------------------------
+        stale_ids = []
+
+        for track_id, data in track_metadata.items():
+            if frame_counter - data["last_seen"] > STALE_THRESHOLD:
+                stale_ids.append(track_id)
+
+        for sid in stale_ids:
+            del track_metadata[sid]
+
+            if sid == selected_object_id:
+                selected_object_id = None
+                current_display_data = {}
+
+        # -------------------------------------------------
+        # SENSOR DATA FETCH
         # -------------------------------------------------
         if selected_object_id is not None:
 
-            if selected_object_id in object_tracker:
+            if selected_object_id in track_metadata:
 
-                sim_target = object_tracker[selected_object_id]["sim_target"]
+                sim_id = track_metadata[selected_object_id]["sim_id"]
 
-                if sim_target:
+                target = next((t for t in targets if t["object_id"] == sim_id), None)
 
+                if target:
                     current_display_data = {
                         "id": selected_object_id,
-                        "class": sim_target["class"],
-                        "speed": sim_target["speed_kts"],
-                        "course": sim_target["course_deg_T"],
-                        "range": sim_target["range_m"],
-                        "cpa": sim_target["cpa_m"],
-                        "threat": sim_target["threat_level"],
-                        "collision": sim_target["collision_status"]
+                        "class": target["class"],
+                        "speed": target["speed_kts"],
+                        "course": target["course_deg_T"],
+                        "range": target["range_m"],
+                        "cpa": target["cpa_m"],
+                        "threat": target["threat_level"],
+                        "collision": target["collision_status"]
                     }
 
         ret, buffer = cv2.imencode('.jpg', frame)
