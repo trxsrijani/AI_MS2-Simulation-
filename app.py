@@ -3,21 +3,23 @@ import cv2
 import json
 from ultralytics import YOLO
 import time
-
+import math
 # -------------------------------------------------
 # LOAD MODEL
 # -------------------------------------------------
-model = YOLO(r"/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/best5.pt")
+model = YOLO(r"/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/best5.pt")
 
 app = Flask(__name__)
 
 # -------------------------------------------------
 # LOAD SENSOR JSON
 # -------------------------------------------------
-with open("/home/srijani/AI SMARTSHIP/AI_MS2_SIMULATION/sensor_data.json") as f:
+with open("/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/sensor_data.json") as f:
     fusion_data = json.load(f)
 
 targets = fusion_data["targets"]
+own_ship = fusion_data["own_ship"]
+visibility = fusion_data["simulation_meta"]["visibility"]
 
 # -------------------------------------------------
 # GLOBALS
@@ -31,6 +33,197 @@ track_metadata = {}      # track_id -> {last_seen, sim_id}
 frame_counter = 0
 STALE_THRESHOLD = 30     # frames (~1 sec if 30fps)
 
+
+
+
+
+from enum import Enum
+
+class VesselType(Enum):
+    NUC = 1
+    RAM = 2
+    CBD = 3
+    FISHING = 4
+    SAILING = 5
+    POWER = 6
+
+
+
+def rule18_priority(own_type, target_type):
+
+    own_val = VesselType[own_type].value
+    tgt_val = VesselType[target_type].value
+
+    if own_val > tgt_val:
+        return "GIVE_WAY"
+    elif own_val < tgt_val:
+        return "STAND_ON"
+    else:
+        return None
+
+
+
+def latlon_to_xy(lat1, lon1, lat2, lon2):
+    R = 6371000  # meters
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    dlat = lat2_rad - lat1_rad
+    dlon = math.radians(lon2 - lon1)
+
+    x = dlon * math.cos((lat1_rad + lat2_rad)/2) * R
+    y = dlat * R
+    return x, y
+
+
+
+
+def normalize_angle_rad(angle):
+    """Normalize angle to [-pi, pi]."""
+    return (angle + math.pi) % (2 * math.pi) - math.pi
+
+
+def relative_bearing(own, target):
+    """
+    Returns relative bearing in degrees.
+    +ve = starboard
+    -ve = port
+    """
+
+    # --- Position difference in meters ---
+    dx, dy = latlon_to_xy(
+        own["position_latlon"]["lat"],
+        own["position_latlon"]["lon"],
+        target["position_latlon"]["lat"],
+        target["position_latlon"]["lon"]
+    )
+
+    # --- True bearing from own ship to target ---
+    # atan2(East, North) to match marine convention
+    true_bearing = math.atan2(dx, dy)
+
+    # --- Own ship heading ---
+    own_heading = math.radians(own["cog_deg"])
+
+    # --- Relative bearing ---
+    rel_bearing_rad = normalize_angle_rad(true_bearing - own_heading)
+
+    return math.degrees(rel_bearing_rad)
+def compute_cpa_tcpa(own, target):
+
+    # --- Position in meters ---
+    dx, dy = latlon_to_xy(
+        own["position_latlon"]["lat"],
+        own["position_latlon"]["lon"],
+        target["position_latlon"]["lat"],
+        target["position_latlon"]["lon"]
+    )
+
+    # --- Convert speeds ---
+    own_speed = own["sog_kts"] * 0.514444
+    tgt_speed = target["sog_kts"] * 0.514444
+
+    own_cog = math.radians(own["cog_deg"])
+    tgt_cog = math.radians(target["cog_deg"])
+
+    own_vx = own_speed * math.sin(own_cog)
+    own_vy = own_speed * math.cos(own_cog)
+
+    tgt_vx = tgt_speed * math.sin(tgt_cog)
+    tgt_vy = tgt_speed * math.cos(tgt_cog)
+
+    # --- Relative vectors ---
+    rvx = tgt_vx - own_vx
+    rvy = tgt_vy - own_vy
+
+    r_dot_v = dx * rvx + dy * rvy
+    v_sq = rvx**2 + rvy**2
+
+    if v_sq == 0:
+        return math.hypot(dx, dy), float("inf")
+
+    tcpa_sec = -r_dot_v / v_sq
+    cpa_x = dx + rvx * tcpa_sec
+    cpa_y = dy + rvy * tcpa_sec
+
+    dcpa = math.hypot(cpa_x, cpa_y)
+
+    return dcpa, tcpa_sec / 60.0  # return minutes
+
+
+
+def colregs_decision(sim_target, own_ship,rel_bearing,visibility):
+
+    dcpa = sim_target["cpa_m"]
+    tcpa = sim_target["tcpa_min"]
+    # dcpa, tcpa = compute_cpa_tcpa(own_ship, sim_target)
+    # rel_bearing = sim_target["bearing_relative_deg"]
+    # rel_bearing =relative_bearing(own_ship, sim_target)
+
+    own_heading = own_ship["heading_deg_T"]
+    # target_course = sim_target["course_deg_T"]
+    target_course = sim_target["heading_deg_T"]
+
+    D_SAFE = 1000
+    T_SAFE = 15
+
+    if not (dcpa < D_SAFE and 0 < tcpa < T_SAFE):
+        return "✓ NO COLLISION RISK – MAINTAIN COURSE"
+    
+
+
+
+    heading_diff = abs((target_course - own_heading + 180) % 360 - 180)
+
+
+    if 112.5 < rel_bearing < 247.5:
+        encounter = "OVERTAKING"
+
+    # elif heading_diff > 150 and (rel_bearing < 10 or rel_bearing > 350):
+    #     encounter = "HEAD_ON"
+    elif heading_diff > 150 and rel_bearing < 10:
+        encounter = "HEAD_ON"
+
+    else:
+        encounter = "CROSSING"
+
+
+
+    # ----------------------------
+    # 4. Rule 18 Priority
+    # ----------------------------
+    role = rule18_priority(own_ship["vessel_type"], sim_target["vessel_type"])
+
+    # If same priority, use geometry rules
+    if role is None:
+
+        if encounter in ["OVERTAKING", "HEAD_ON"]:
+            role = "GIVE_WAY"
+        elif encounter == "CROSSING":
+            if rel_bearing > 0:
+                role = "GIVE_WAY"
+            else:
+                role = "STAND_ON"
+
+
+    # if encounter in ["OVERTAKING", "HEAD_ON"]:
+    #     role = "GIVE_WAY"
+
+    # elif encounter == "CROSSING":
+    #     if 0 < rel_bearing < 180:
+    #         role = "GIVE_WAY"
+    #     else:
+    #         role = "STAND_ON"
+
+    if role == "GIVE_WAY":
+        return f"⚠ {encounter} – GIVE WAY – ALTER COURSE STARBOARD (≥20°)"
+
+    else:
+        if dcpa < 500 and 0 < tcpa < 5:
+            return "⚠ STAND-ON – TAKE ACTION (Rule 17 Emergency)"
+        else:
+            return "✓ STAND-ON – MAINTAIN COURSE"
+        
+
 # -------------------------------------------------
 # VIDEO + YOLO TRACKING
 # -------------------------------------------------
@@ -39,6 +232,7 @@ def generate_frames():
     global current_objects, selected_object_id
     global current_display_data, track_metadata
     global frame_counter
+    global visibility
     video_paths = [
 
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation.mp4",
@@ -49,7 +243,7 @@ def generate_frames():
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (3).mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
     ]
 
     for video_path in video_paths:
@@ -153,14 +347,51 @@ def generate_frames():
 
                     target = next((t for t in targets if t["object_id"] == sim_id), None)
 
+                    # if target:
+                    #     current_display_data = {
+                    #         "id": selected_object_id,
+                    #         "class": target["class"],
+                    #         "mmsi":target["mmsi"],
+
+                    #         "bearing_degree":target["bearing_deg_T"],
+                    #         "bearing_relative_degree":target["bearing_relative_deg"],
+
+                    #         "speed": target["speed_kts"],
+                    #         "course": target["course_deg_T"],
+
+                    #         "range": target["range_m"],
+                    #         "cpa": target["cpa_m"],
+                    #         "threat": target["threat_level"],
+                    #         "collision": target["collision_status"],
+                    #         "navy_type": target["navy_type"]
+                    #     }
                     if target:
+                        
+
+                        dcpa, tcpa = compute_cpa_tcpa(own_ship, target)
+
+                        target_with_cpa = target.copy()
+                        target_with_cpa["cpa_m"] = dcpa
+                        target_with_cpa["tcpa_min"] = tcpa
+
+                        # rel_bearing = sim_target["bearing_relative_deg"]
+                        rel_bearing =relative_bearing(own_ship,target)
+                        action = colregs_decision(target_with_cpa, own_ship,rel_bearing,visibility)
+
                         current_display_data = {
+
+                            # OWN SHIP
+                            "own_heading": own_ship["heading_deg_T"],
+                            "own_speed": own_ship["speed_kts"],
+
+                            # TARGET
                             "id": selected_object_id,
                             "class": target["class"],
-                            "mmsi":target["mmsi"],
+                            "mmsi": target["mmsi"],
+                            "navy_type": target["navy_type"],
 
-                            "bearing_degree":target["bearing_deg_T"],
-                            "bearing_relative_degree":target["bearing_relative_deg"],
+                            "bearing_degree": target["bearing_deg_T"],
+                            "bearing_relative_degree": target["bearing_relative_deg"],
 
                             "speed": target["speed_kts"],
                             "course": target["course_deg_T"],
@@ -169,7 +400,9 @@ def generate_frames():
                             "cpa": target["cpa_m"],
                             "threat": target["threat_level"],
                             "collision": target["collision_status"],
-                            "navy_type": target["navy_type"]
+
+                            # ACTION
+                            "recommended_action": action
                         }
 
             ret, buffer = cv2.imencode('.jpg', frame)

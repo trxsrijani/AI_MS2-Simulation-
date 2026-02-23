@@ -33,14 +33,14 @@ body {
     border-left: 1px solid #00ffcc;
     color: #00ffcc;
     font-family: monospace;
-    font-size: 12px;
+    font-size: 8px;
     padding: 15px;
     box-sizing: border-box;
 }
 
 #sensorPanel h3 {
     margin-top: 0;
-    font-size: 14px;
+    font-size: 10px;
     text-align: center;
     border-bottom: 1px solid #00ffcc;
     padding-bottom: 8px;
@@ -115,14 +115,22 @@ body {
     <img id="videoStream" src="{{ url_for('video') }}">
 </div>
 
-<div id="miniMap">
-    <iframe id="routeFrame" src="http://192.168.0.175:5002/"></iframe>
-</div>
+<!-- <div id="miniMap">
+    <iframe id="routeFrame" src="http://192.168.59.100:5002/"></iframe>
+</div> -->
 
-<button id="expandMap">⛶</button>
-<button id="closeMap" style="display:none;">←</button>
+<!-- <button id="expandMap">⛶</button>
+<button id="closeMap" style="display:none;">←</button> -->
 
 <div id="sensorPanel">
+
+    <hr style="border-color:#00ffcc;">
+    <h3>OWN SHIP</h3>
+
+    <div class="dataLine">Heading: <span id="own_heading">-</span> °T</div>
+    <div class="dataLine">Speed: <span id="own_speed">-</span> kts</div>
+
+    <hr style="border-color:#00ffcc;">
     <h3>TARGET DATA</h3>
 
     <div class="dataLine">ID: <span id="id">-</span></div>
@@ -141,6 +149,14 @@ body {
 
     <div class="dataLine">Threat: <span id="threat">-</span></div>
     <div class="dataLine">Collision: <span id="collision">-</span></div>
+
+
+    <hr style="border-color:#00ffcc;">
+
+    <h3>ACTION</h3>
+    <div class="dataLine">
+        <span id="recommended_action">-</span>
+    </div>
 
 </div>
 
@@ -194,7 +210,19 @@ function updateSensorData() {
     fetch("/sensor_data")
         .then(res => res.json())
         .then(data => {
+            
 
+
+            // OWN SHIP
+            document.getElementById("own_heading").innerText =
+                data.own_heading ? data.own_heading.toFixed(1) : "-";
+
+            document.getElementById("own_speed").innerText =
+                data.own_speed ? data.own_speed.toFixed(1) : "-";
+
+            // ACTION
+            document.getElementById("recommended_action").innerText =
+                data.recommended_action || "-";
             // Identification
             document.getElementById("id").innerText = data.id || "-";
             document.getElementById("class").innerText = data.class || "-";
