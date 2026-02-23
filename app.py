@@ -63,8 +63,16 @@ def generate_frames():
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok4.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5 (2).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok52.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4"
 
-    
    
    
    
