@@ -306,221 +306,6 @@ def iou(boxA, boxB):
 # VIDEO + YOLO TRACKING
 # -------------------------------------------------
 
-# def generate_frames():
-
-#     global current_objects, selected_object_id
-#     global current_display_data, track_metadata
-#     global frame_counter, lost_tracks, next_display_id
-#     global own_ship_state
-
-#     video_paths = [
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok4.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
-#         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4"
-#     ]
-
-#     for video_path in video_paths:
-#         cap = cv2.VideoCapture(video_path)
-
-#         while True:
-#             success, frame = cap.read()
-#             if not success:
-#                 break
-
-#             frame_counter += 1
-#             frame_objects = []
-#             frame_boxes = []
-
-#             results = model.track(
-#                 frame,
-#                 persist=True,
-#                 conf=0.35,
-#                 iou=0.7,
-#                 verbose=False
-#             )
-
-#             # ===============================
-#             # DETECTION LOOP
-#             # ===============================
-#             for r in results:
-#                 for box in r.boxes:
-
-#                     if box.id is None:
-#                         continue
-
-#                     track_id = int(box.id[0])
-#                     cls_id = int(box.cls[0])
-#                     class_name = model.names[cls_id]
-
-#                     x1, y1, x2, y2 = map(int, box.xyxy[0])
-#                     new_box = (x1, y1, x2, y2)
-
-#                     # Duplicate suppression (same frame)
-#                     duplicate = False
-#                     new_center = bbox_center(x1, y1, x2, y2)
-
-#                     for existing_box in frame_boxes:
-#                         existing_center = bbox_center(*existing_box)
-#                         if iou(new_box, existing_box) > 0.6 or \
-#                            euclidean(new_center, existing_center) < 50:
-#                             duplicate = True
-#                             break
-
-#                     if duplicate:
-#                         continue
-
-#                     frame_boxes.append(new_box)
-#                     center = new_center
-
-#                     # =====================================================
-#                     # NEW TRACK
-#                     # =====================================================
-#                     if track_id not in track_metadata:
-
-#                         # -------- Try relinking ----------
-#                         relinked = False
-
-#                         for lost_id, lost_data in list(lost_tracks.items()):
-
-#                             if frame_counter - lost_data["last_seen"] > RELINK_TIME:
-#                                 del lost_tracks[lost_id]
-#                                 continue
-
-#                             if euclidean(center, lost_data["center"]) < RELINK_DISTANCE:
-
-#                                 track_metadata[track_id] = {
-#                                     "display_id": lost_data["display_id"],
-#                                     "sim_id": lost_data["sim_id"],
-#                                     "last_seen": frame_counter,
-#                                     "center": center,
-#                                     "class_history": [class_name],
-#                                     "confirmed_class": class_name,
-#                                     "age": 1,
-#                                     "confirmed": False
-#                                 }
-
-#                                 del lost_tracks[lost_id]
-#                                 relinked = True
-#                                 break
-
-#                         # -------- If not relinked ----------
-#                         if not relinked:
-
-#                             # Assign sim target FIRST
-#                             sim_target_id = None
-#                             for t in targets:
-#                                 if t["class"].lower() == class_name.lower():
-#                                     if t["object_id"] not in [
-#                                         v["sim_id"] for v in track_metadata.values()
-#                                     ]:
-#                                         sim_target_id = t["object_id"]
-#                                         break
-
-#                             display_id = next_display_id
-#                             next_display_id += 1
-
-#                             track_metadata[track_id] = {
-#                                 "display_id": display_id,
-#                                 "sim_id": sim_target_id,
-#                                 "last_seen": frame_counter,
-#                                 "center": center,
-#                                 "class_history": [class_name],
-#                                 "confirmed_class": class_name,
-#                                 "age": 1,
-#                                 "confirmed": False
-#                             }
-
-#                     # =====================================================
-#                     # EXISTING TRACK
-#                     # =====================================================
-#                     else:
-#                         meta = track_metadata[track_id]
-#                         meta["last_seen"] = frame_counter
-#                         meta["center"] = center
-#                         meta["age"] += 1
-
-#                         # Confirm after 5 frames
-#                         if meta["age"] >= 5:
-#                             meta["confirmed"] = True
-
-#                         # Sliding window class smoothing
-#                         meta["class_history"].append(class_name)
-#                         if len(meta["class_history"]) > 15:
-#                             meta["class_history"].pop(0)
-
-#                         meta["confirmed_class"] = max(
-#                             set(meta["class_history"]),
-#                             key=meta["class_history"].count
-#                         )
-
-#                     meta = track_metadata[track_id]
-
-#                     # Only show confirmed tracks
-#                     if not meta["confirmed"]:
-#                         continue
-
-#                     frame_objects.append({
-#                         "id": track_id,
-#                         "x1": x1,
-#                         "y1": y1,
-#                         "x2": x2,
-#                         "y2": y2
-#                     })
-
-#                     # Draw
-#                     color = (0, 255, 0) if track_id == selected_object_id else (0, 255, 255)
-#                     display_id = meta["display_id"]
-
-#                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-#                     cv2.putText(
-#                         frame,
-#                         f"ID {display_id} - {meta['confirmed_class']}",
-#                         (x1, y1 - 10),
-#                         cv2.FONT_HERSHEY_SIMPLEX,
-#                         0.6,
-#                         color,
-#                         2
-#                     )
-
-#             current_objects = frame_objects
-
-#             # =====================================================
-#             # CLEANUP STALE TRACKS
-#             # =====================================================
-#             stale_ids = []
-
-#             for tid, data in track_metadata.items():
-#                 if frame_counter - data["last_seen"] > STALE_THRESHOLD:
-#                     stale_ids.append(tid)
-
-#             for sid in stale_ids:
-#                 lost_tracks[sid] = {
-#                     "center": track_metadata[sid]["center"],
-#                     "sim_id": track_metadata[sid]["sim_id"],
-#                     "display_id": track_metadata[sid]["display_id"],
-#                     "last_seen": frame_counter
-#                 }
-#                 del track_metadata[sid]
-
-#                 if sid == selected_object_id:
-#                     selected_object_id = None
-#                     current_display_data = {}
-
-#             # Encode frame
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             frame_bytes = buffer.tobytes()
-
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' +
-#                    frame_bytes + b'\r\n')
-
-#         cap.release()
-
-
 def generate_frames():
 
     global current_objects, selected_object_id
@@ -679,7 +464,8 @@ def generate_frames():
                         continue
 
                     frame_objects.append({
-                        "id": track_id,
+                        # "id": track_id,
+                        "id": meta["display_id"], 
                         "x1": x1,
                         "y1": y1,
                         "x2": x2,
@@ -794,10 +580,10 @@ def generate_frames():
                             rel_bearing,
                             
                         )
-
+                        display_id = track_metadata[selected_object_id]["display_id"]
                         # --- Final data for UI ---
                         current_display_data = {
-                            "id": selected_object_id,
+                            "id": display_id,
                             "class": target["class"],
                             "mmsi": target["mmsi"],
                             "navy_type": target["navy_type"],
@@ -851,8 +637,21 @@ def sensor_data():
 @app.route('/select_object', methods=['POST'])
 def select_object():
     global selected_object_id
-    selected_object_id = int(request.json["id"])
-    return jsonify({"status": "ok"})
+
+    try:
+        display_id = int(request.json["id"])
+
+        # Find track_id from display_id
+        for tid, meta in track_metadata.items():
+            if meta["display_id"] == display_id:
+                selected_object_id = tid
+                return jsonify({"status": "ok"})
+
+        # If not found
+        return jsonify({"status": "not_found"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route('/own_ship', methods=['GET'])

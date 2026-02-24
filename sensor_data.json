@@ -1,314 +1,212 @@
 {
-
   "targets": [
-
     {
-
       "object_id": "target_001",
-
       "track_id": 101,
-
       "class": "Vessel",
-
       "vessel_type": "POWER",
-
       "mmsi": "VESSEL-826",
-
       "navy_type": "NAV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0500, "lon": -89.2300 },
-
+      "position_latlon": {
+        "lat": 27.0500,
+        "lon": -89.2300
+      },
       "cog_deg": 180,
-
       "heading_deg_T": 180,
-
       "sog_kts": 12,
-
       "length_m": 200,
-
       "displacement_tons": 5000,
-
-      "sensor_sources": { "position": "AIS", "course": "AIS", "speed": "AIS" },
-
+      "sensor_sources": {
+        "position": "AIS",
+        "course": "AIS",
+        "speed": "AIS"
+      },
       "cv_confidence_percent": 93.0
-
     },
-
     {
-
       "object_id": "target_002",
-
       "track_id": 102,
-
       "class": "Vessel",
-
       "vessel_type": "POWER",
-
       "mmsi": "VESSEL-102",
-
       "navy_type": "NAV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0200, "lon": -89.1600 },
-
+      "position_latlon": {
+        "lat": 27.0200,
+        "lon": -89.1600
+      },
       "cog_deg": 270,
-
       "heading_deg_T": 270,
-
       "sog_kts": 10,
-
       "length_m": 120,
-
       "displacement_tons": 5000,
-
-      "sensor_sources": { "position": "AIS", "course": "AIS", "speed": "AIS" },
-
+      "sensor_sources": {
+        "position": "AIS",
+        "course": "AIS",
+        "speed": "AIS"
+      },
       "cv_confidence_percent": 93.0
-
     },
-
     {
-
       "object_id": "target_003",
-
       "track_id": 103,
-
       "class": "Vessel",
-
       "vessel_type": "POWER",
-
       "mmsi": "VESSEL-103",
-
       "navy_type": "NAV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0200, "lon": -89.2400 },
-
+      "position_latlon": {
+        "lat": 27.0200,
+        "lon": -89.2400
+      },
       "cog_deg": 90,
-
       "heading_deg_T": 90,
-
       "sog_kts": 12,
-
       "length_m": 120,
-
       "displacement_tons": 5000,
-
-      "sensor_sources": { "position": "AIS", "course": "AIS", "speed": "AIS" },
-
+      "sensor_sources": {
+        "position": "AIS",
+        "course": "AIS",
+        "speed": "AIS"
+      },
       "cv_confidence_percent": 93.0
-
     },
-
     {
-
       "object_id": "target_004",
-
       "track_id": 104,
-
       "class": "Vessel",
-
       "vessel_type": "POWER",
-
       "mmsi": "VESSEL-104",
-
       "navy_type": "NAV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0000, "lon": -89.1800 },
-
+      "position_latlon": {
+        "lat": 27.0000,
+        "lon": -89.1800
+      },
       "cog_deg": 90,
-
       "heading_deg_T": 90,
-
       "sog_kts": 8,
-
       "length_m": 120,
-
       "displacement_tons": 5000,
-
-      "sensor_sources": { "position": "AIS", "course": "AIS", "speed": "AIS" },
-
+      "sensor_sources": {
+        "position": "AIS",
+        "course": "AIS",
+        "speed": "AIS"
+      },
       "cv_confidence_percent": 93.0
-
     },
-
     {
-
       "object_id": "target_005",
-
       "track_id": 105,
-
       "class": "Warship",
-
       "vessel_type": "POWER",
-
       "mmsi": "WARSHIP-105",
-
       "navy_type": "NAV",
-
       "visibility": "FOGGY",
-
-      "position_latlon": { "lat": 27.0200, "lon": -89.2100 },
-
+      "position_latlon": {
+        "lat": 27.0200,
+        "lon": -89.2100
+      },
       "cog_deg": 180,
-
       "heading_deg_T": 180,
-
       "sog_kts": 10,
-
       "length_m": 120,
-
       "displacement_tons": 5000,
-
-      "sensor_sources": { "position": "AIS", "course": "AIS", "speed": "AIS" },
-
+      "sensor_sources": {
+        "position": "AIS",
+        "course": "AIS",
+        "speed": "AIS"
+      },
       "cv_confidence_percent": 93.0
-
     },
-
     {
-
       "object_id": "target_006",
-
       "track_id": 201,
-
       "class": "Boat",
-
       "vessel_type": "POWER",
-
       "mmsi": "BOAT-445",
-
       "navy_type": "CIV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0405, "lon": -89.2050 },
-
+      "position_latlon": {
+        "lat": 27.0405,
+        "lon": -89.2050
+      },
       "cog_deg": 90,
-
       "heading_deg_T": 90,
-
       "sog_kts": 6,
-
       "length_m": 25,
-
       "displacement_tons": 150,
-
-      "sensor_sources": { "vision": "EO_CAMERA" },
-
+      "sensor_sources": {
+        "vision": "EO_CAMERA"
+      },
       "cv_confidence_percent": 88.0
-
     },
-
     {
-
       "object_id": "target_007",
-
       "track_id": 202,
-
       "class": "Boat",
-
       "vessel_type": "POWER",
-
       "mmsi": "BOAT-875",
-
       "navy_type": "CIV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0410, "lon": -89.1980 },
-
+      "position_latlon": {
+        "lat": 27.0410,
+        "lon": -89.1980
+      },
       "cog_deg": 95,
-
       "heading_deg_T": 95,
-
       "sog_kts": 10,
-
       "length_m": 120,
-
       "displacement_tons": 8000,
-
-      "sensor_sources": { "vision": "EO_CAMERA" },
-
+      "sensor_sources": {
+        "vision": "EO_CAMERA"
+      },
       "cv_confidence_percent": 90.0
-
     },
-
     {
-
       "object_id": "target_008",
-
       "track_id": 203,
-
       "class": "Boat",
-
       "vessel_type": "POWER",
-
       "mmsi": "BOAT-489",
-
       "navy_type": "CIV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0400, "lon": -89.1925 },
-
+      "position_latlon": {
+        "lat": 27.0400,
+        "lon": -89.1925
+      },
       "cog_deg": 85,
-
       "heading_deg_T": 85,
-
       "sog_kts": 7,
-
       "length_m": 15,
-
       "displacement_tons": 50,
-
-      "sensor_sources": { "vision": "EO_CAMERA" },
-
+      "sensor_sources": {
+        "vision": "EO_CAMERA"
+      },
       "cv_confidence_percent": 82.0
-
     },
-
     {
-
       "object_id": "target_009",
-
       "track_id": 204,
-
       "class": "Boat",
-
       "vessel_type": "POWER",
-
       "mmsi": "BOAT-261",
-
       "navy_type": "CIV",
-
       "visibility": "CLEAR",
-
-      "position_latlon": { "lat": 27.0395, "lon": -89.2150 },
-
+      "position_latlon": {
+        "lat": 27.0395,
+        "lon": -89.2150
+      },
       "cog_deg": 100,
-
       "heading_deg_T": 100,
-
       "sog_kts": 7,
-
       "length_m": 30,
-
       "displacement_tons": 200,
-
-      "sensor_sources": { "vision": "EO_CAMERA" },
-
+      "sensor_sources": {
+        "vision": "EO_CAMERA"
+      },
       "cv_confidence_percent": 85.0
-
     }
-
   ]
-
 }
- 
