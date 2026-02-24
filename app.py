@@ -40,10 +40,11 @@ track_metadata = {}      # track_id -> {last_seen, sim_id}
 frame_counter = 0
 STALE_THRESHOLD = 30     # frames (~1 sec if 30fps)
 
-
-
-
-
+RELINK_RATIO = 0.08
+RELINK_DISTANCE = int(RELINK_RATIO * 1280)
+lost_tracks = {}  # old_track_id -> {center, sim_id, last_seen}
+RELINK_TIME = 60  # frames (~4 sec at 15 FPS)
+next_display_id = 1
 
 # -------------------------------------------------
 # OWN SHIP GLOBAL STATE
@@ -58,7 +59,7 @@ own_ship_state = {
     "last_update": None
 }
 
-ROUTE_SIM_API = "http://192.168.59.100:5002/route_simulation_state"
+ROUTE_SIM_API = "http://192.168.0.175:5002/route_simulation_state"
 
 def update_own_ship_loop():
     global own_ship_state
@@ -82,7 +83,6 @@ def update_own_ship_loop():
                 "rate_of_turn": nav.get("rate_of_turn"),
                 "last_update": time.time()
             })
-            print(own_ship_state)
 
         except Exception as e:
             print("Own ship API error:", e)
@@ -273,7 +273,31 @@ def colregs_decision(sim_target, own_ship,rel_bearing,visibility):
             return "⚠ STAND-ON – TAKE ACTION (Rule 17 Emergency)"
         else:
             return "✓ STAND-ON – MAINTAIN COURSE"
-        
+
+
+def bbox_center(x1, y1, x2, y2):
+    return ((x1 + x2) / 2, (y1 + y2) / 2)
+
+def euclidean(p1, p2):
+    return ((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2) ** 0.5        
+
+def iou(boxA, boxB):
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+
+    boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+    boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+
+    union = boxAArea + boxBArea - interArea
+
+    if union == 0:
+        return 0
+
+    return interArea / union
 
 # -------------------------------------------------
 # VIDEO + YOLO TRACKING
@@ -282,19 +306,10 @@ def generate_frames():
 
     global current_objects, selected_object_id
     global current_display_data, track_metadata
-    global frame_counter
-    global visibility
-    video_paths = [
+    global frame_counter, lost_tracks, next_display_id
+    global own_ship_state
 
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation.mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation (1).mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (8).mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (7).mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (6).mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (3).mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
-        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
+    video_paths = [
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
@@ -302,23 +317,31 @@ def generate_frames():
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
         "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4"
-       
     ]
 
     for video_path in video_paths:
         cap = cv2.VideoCapture(video_path)
+
         while True:
             success, frame = cap.read()
             if not success:
                 break
-            
-            time.sleep(0.07)
+
             frame_counter += 1
             frame_objects = []
-            active_track_ids = set()
+            frame_boxes = []
 
-            results = model.track(frame, persist=True, conf=0.5)
+            results = model.track(
+                frame,
+                persist=True,
+                conf=0.35,
+                iou=0.7,
+                verbose=False
+            )
 
+            # ===============================
+            # DETECTION LOOP
+            # ===============================
             for r in results:
                 for box in r.boxes:
 
@@ -330,30 +353,111 @@ def generate_frames():
                     class_name = model.names[cls_id]
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    new_box = (x1, y1, x2, y2)
 
-                    active_track_ids.add(track_id)
+                    # Duplicate suppression (same frame)
+                    duplicate = False
+                    new_center = bbox_center(x1, y1, x2, y2)
 
-                    # -------------------------------------------------
-                    # NEW TRACK → ASSIGN SIM TARGET
-                    # -------------------------------------------------
+                    for existing_box in frame_boxes:
+                        existing_center = bbox_center(*existing_box)
+                        if iou(new_box, existing_box) > 0.6 or \
+                           euclidean(new_center, existing_center) < 50:
+                            duplicate = True
+                            break
+
+                    if duplicate:
+                        continue
+
+                    frame_boxes.append(new_box)
+                    center = new_center
+
+                    # =====================================================
+                    # NEW TRACK
+                    # =====================================================
                     if track_id not in track_metadata:
 
-                        sim_target_id = None
+                        # -------- Try relinking ----------
+                        relinked = False
 
-                        for t in targets:
-                            if t["class"].lower() == class_name.lower():
-                                if t["object_id"] not in [v["sim_id"] for v in track_metadata.values()]:
-                                    sim_target_id = t["object_id"]
-                                    break
+                        for lost_id, lost_data in list(lost_tracks.items()):
 
-                        track_metadata[track_id] = {
-                            "last_seen": frame_counter,
-                            "sim_id": sim_target_id
-                        }
+                            if frame_counter - lost_data["last_seen"] > RELINK_TIME:
+                                del lost_tracks[lost_id]
+                                continue
 
+                            if euclidean(center, lost_data["center"]) < RELINK_DISTANCE:
+
+                                track_metadata[track_id] = {
+                                    "display_id": lost_data["display_id"],
+                                    "sim_id": lost_data["sim_id"],
+                                    "last_seen": frame_counter,
+                                    "center": center,
+                                    "class_history": [class_name],
+                                    "confirmed_class": class_name,
+                                    "age": 1,
+                                    "confirmed": False
+                                }
+
+                                del lost_tracks[lost_id]
+                                relinked = True
+                                break
+
+                        # -------- If not relinked ----------
+                        if not relinked:
+
+                            # Assign sim target FIRST
+                            sim_target_id = None
+                            for t in targets:
+                                if t["class"].lower() == class_name.lower():
+                                    if t["object_id"] not in [
+                                        v["sim_id"] for v in track_metadata.values()
+                                    ]:
+                                        sim_target_id = t["object_id"]
+                                        break
+
+                            display_id = next_display_id
+                            next_display_id += 1
+
+                            track_metadata[track_id] = {
+                                "display_id": display_id,
+                                "sim_id": sim_target_id,
+                                "last_seen": frame_counter,
+                                "center": center,
+                                "class_history": [class_name],
+                                "confirmed_class": class_name,
+                                "age": 1,
+                                "confirmed": False
+                            }
+
+                    # =====================================================
+                    # EXISTING TRACK
+                    # =====================================================
                     else:
-                        # Update last seen
-                        track_metadata[track_id]["last_seen"] = frame_counter
+                        meta = track_metadata[track_id]
+                        meta["last_seen"] = frame_counter
+                        meta["center"] = center
+                        meta["age"] += 1
+
+                        # Confirm after 5 frames
+                        if meta["age"] >= 5:
+                            meta["confirmed"] = True
+
+                        # Sliding window class smoothing
+                        meta["class_history"].append(class_name)
+                        if len(meta["class_history"]) > 15:
+                            meta["class_history"].pop(0)
+
+                        meta["confirmed_class"] = max(
+                            set(meta["class_history"]),
+                            key=meta["class_history"].count
+                        )
+
+                    meta = track_metadata[track_id]
+
+                    # Only show confirmed tracks
+                    if not meta["confirmed"]:
+                        continue
 
                     frame_objects.append({
                         "id": track_id,
@@ -363,117 +467,54 @@ def generate_frames():
                         "y2": y2
                     })
 
-                    # Draw box
-                    color = (0, 255, 255)
-                    if track_id == selected_object_id:
-                        color = (0, 255, 0)
+                    # Draw
+                    color = (0, 255, 0) if track_id == selected_object_id else (0, 255, 255)
+                    display_id = meta["display_id"]
 
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                    cv2.putText(frame,
-                                f"ID {track_id} - {class_name}",
-                                (x1, y1 - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.6,
-                                color,
-                                2)
+                    cv2.putText(
+                        frame,
+                        f"ID {display_id} - {meta['confirmed_class']}",
+                        (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        color,
+                        2
+                    )
 
             current_objects = frame_objects
 
-            # -------------------------------------------------
+            # =====================================================
             # CLEANUP STALE TRACKS
-            # -------------------------------------------------
+            # =====================================================
             stale_ids = []
 
-            for track_id, data in track_metadata.items():
+            for tid, data in track_metadata.items():
                 if frame_counter - data["last_seen"] > STALE_THRESHOLD:
-                    stale_ids.append(track_id)
+                    stale_ids.append(tid)
 
             for sid in stale_ids:
+                lost_tracks[sid] = {
+                    "center": track_metadata[sid]["center"],
+                    "sim_id": track_metadata[sid]["sim_id"],
+                    "display_id": track_metadata[sid]["display_id"],
+                    "last_seen": frame_counter
+                }
                 del track_metadata[sid]
 
                 if sid == selected_object_id:
                     selected_object_id = None
                     current_display_data = {}
 
-            # -------------------------------------------------
-            # SENSOR DATA FETCH
-            # -------------------------------------------------
-            if selected_object_id is not None:
-
-                if selected_object_id in track_metadata:
-
-                    sim_id = track_metadata[selected_object_id]["sim_id"]
-
-                    target = next((t for t in targets if t["object_id"] == sim_id), None)
-
-                    # if target:
-                    #     current_display_data = {
-                    #         "id": selected_object_id,
-                    #         "class": target["class"],
-                    #         "mmsi":target["mmsi"],
-
-                    #         "bearing_degree":target["bearing_deg_T"],
-                    #         "bearing_relative_degree":target["bearing_relative_deg"],
-
-                    #         "speed": target["speed_kts"],
-                    #         "course": target["course_deg_T"],
-
-                    #         "range": target["range_m"],
-                    #         "cpa": target["cpa_m"],
-                    #         "threat": target["threat_level"],
-                    #         "collision": target["collision_status"],
-                    #         "navy_type": target["navy_type"]
-                    #     }
-                    if target:
-                        
-
-                        dcpa, tcpa = compute_cpa_tcpa(own_ship, target)
-
-                        target_with_cpa = target.copy()
-                        target_with_cpa["cpa_m"] = dcpa
-                        target_with_cpa["tcpa_min"] = tcpa
-
-                        # rel_bearing = sim_target["bearing_relative_deg"]
-                        rel_bearing =relative_bearing(own_ship,target)
-                        action = colregs_decision(target_with_cpa, own_ship,rel_bearing,visibility)
-
-                        current_display_data = {
-
-                            # OWN SHIP
-                            "own_heading": own_ship["heading_deg_T"],
-                            "own_speed": own_ship["speed_kts"],
-
-                            # TARGET
-                            "id": selected_object_id,
-                            "class": target["class"],
-                            "mmsi": target["mmsi"],
-                            "navy_type": target["navy_type"],
-
-                            "bearing_degree": target["bearing_deg_T"],
-                            "bearing_relative_degree": target["bearing_relative_deg"],
-
-                            "speed": target["speed_kts"],
-                            "course": target["course_deg_T"],
-
-                            "range": target["range_m"],
-                            "cpa": target["cpa_m"],
-                            "threat": target["threat_level"],
-                            "collision": target["collision_status"],
-
-                            # ACTION
-                            "recommended_action": action
-                        }
-
+            # Encode frame
             ret, buffer = cv2.imencode('.jpg', frame)
             frame_bytes = buffer.tobytes()
 
             yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' +
+                   frame_bytes + b'\r\n')
 
-    
-     
         cap.release()
-
 
 # -------------------------------------------------
 # ROUTES
@@ -512,7 +553,6 @@ def update_own_ship():
     global own_ship_state
 
     data = request.json
-    print(data)
     try:
         live = data.get("live_state", {})
         pos = live.get("position", {})

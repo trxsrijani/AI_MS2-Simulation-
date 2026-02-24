@@ -228,8 +228,9 @@ body {
 
 /* Data Lines */
 .dataLine {
-    margin-bottom: 12px;
-    word-wrap: break-word;
+    margin-bottom: 2px;
+    font-size:9px;
+    /* word-wrap: break-word; */
 }
 
 /* Status Colors */
@@ -315,7 +316,7 @@ body {
     border-radius: 8px;
     z-index: 3000;
     display: none;
-    width: 200px;
+    width: 150px;
     border: 1px solid #00a8cc;
 }
 
@@ -385,17 +386,17 @@ body {
 </div>
 
 <div id="miniMap">
-    <iframe id="routeFrame" src="http://192.168.59.100:5002/"></iframe>
+    <iframe id="routeFrame" src="http://192.168.0.175:5002/"></iframe>
 </div>
 
 
 <!-- FULLSCREEN ROUTE PANEL -->
 <div id="routePanelHost">
-    <b>Demo Route</b><br />
-    <input id="startLatHost" placeholder="Start Lat" />
-    <input id="startLngHost" placeholder="Start Lng" />
-    <input id="endLatHost" placeholder="End Lat" />
-    <input id="endLngHost" placeholder="End Lng" />
+
+    <input id="startLatHost" placeholder="Origin Lat" />
+    <input id="startLngHost" placeholder="Origin Lng" />
+    <input id="endLatHost" placeholder="Destination Lat" />
+    <input id="endLngHost" placeholder="Destination Lng" />
   
     <button id="generateRouteHost">Generate Route</button>
     <button id="clearRouteHost">Clear Route</button>
@@ -414,16 +415,19 @@ body {
 
     <div class="dataLine">Heading: <span id="own_heading">-</span> °T</div>
     <div class="dataLine">Speed: <span id="own_speed">-</span> kts</div> -->
-    <hr style="border-color:#00ffcc;">
+  
+    <hr style="border-color:#00a8cc;">
     <!-- <h3>OWN SHIP (RAW)</h3> -->
 
     <h3>OWN SHIP</h3>
 
-    <div id="own_ship_display" style="font-size:10px; color:#00ffcc;">
+    <div id="own_ship_display" style="font-size:9px;  margin-bottom: 2px;">
         Waiting for data...
     </div>
 
-    <hr style="border-color:#00ffcc;">
+
+<div></div>
+    <hr style="border-color:#00a8cc">
     <h3>TARGET DATA</h3>
 
     <div class="dataLine">ID: <span id="id">-</span></div>
@@ -444,7 +448,7 @@ body {
     <div class="dataLine">Collision: <span id="collision">-</span></div>
 
 
-    <hr style="border-color:#00ffcc;">
+    <hr style="border-color:#00a8cc;">
 
     <h3>ACTION</h3>
     <div class="dataLine">
