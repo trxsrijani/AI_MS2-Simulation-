@@ -14,14 +14,18 @@ from flask_cors import CORS
 # -------------------------------------------------
 # LOAD MODEL
 # -------------------------------------------------
-model = YOLO(r"/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/best5.pt")
+# model = YOLO(r"/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/best5.pt")
+model = YOLO(r"C:\Users\myada\OneDrive\Desktop\Ai_smartships\AI_MS2-Simulation-\best5.pt")
 
 app = Flask(__name__)
 CORS(app)
 # -------------------------------------------------
 # LOAD SENSOR JSON
 # -------------------------------------------------
-with open("/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/sensor_data.json") as f:
+# with open("/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/sensor_data.json") as f:
+#     fusion_data = json.load(f)
+
+with open(r"C:/Users/myada/OneDrive/Desktop/Ai_smartships/AI_MS2-Simulation-/sensor_data.json") as f:
     fusion_data = json.load(f)
 
 targets = fusion_data["targets"]
@@ -55,10 +59,12 @@ own_ship_state = {
     "cog_deg": None,
     "sog_kts": None,
     "rate_of_turn": None,
-    "last_update": None
+    "last_update": None,
+    "vessel_type": "POWER"   
 }
 
-ROUTE_SIM_API = "http://192.168.59.100:5002/route_simulation_state"
+
+ROUTE_SIM_API = "http://192.168.0.175:5002/route_simulation_state"
 
 def update_own_ship_loop():
     global own_ship_state
@@ -74,15 +80,17 @@ def update_own_ship_loop():
             nav = live.get("navigation", {})
 
             own_ship_state.update({
-                "lat": pos.get("lat_dms"),
-                "lon":pos.get("lon_dms"),
+                # "lat": pos.get("lat_dms"),
+                # "lon":pos.get("lon_dms"),
+                "lat": pos.get("lat"),
+                "lon":pos.get("lon"),
                 "heading_deg_T": nav.get("heading"),
                 "cog_deg": nav.get("cog"),
                 "sog_kts": nav.get("sog"),
                 "rate_of_turn": nav.get("rate_of_turn"),
                 "last_update": time.time()
             })
-            print(own_ship_state)
+            # print(own_ship_state)
 
         except Exception as e:
             print("Own ship API error:", e)
@@ -202,7 +210,7 @@ def compute_cpa_tcpa(own, target):
 
 
 
-def colregs_decision(sim_target, own_ship,rel_bearing,visibility):
+def colregs_decision(sim_target, own_ship,rel_bearing):
 
     dcpa = sim_target["cpa_m"]
     tcpa = sim_target["tcpa_min"]
@@ -214,7 +222,7 @@ def colregs_decision(sim_target, own_ship,rel_bearing,visibility):
     # target_course = sim_target["course_deg_T"]
     target_course = sim_target["heading_deg_T"]
 
-    D_SAFE = 1000
+    D_SAFE = 500
     T_SAFE = 15
 
     if not (dcpa < D_SAFE and 0 < tcpa < T_SAFE):
@@ -275,6 +283,16 @@ def colregs_decision(sim_target, own_ship,rel_bearing,visibility):
             return "✓ STAND-ON – MAINTAIN COURSE"
         
 
+
+
+
+def own_ship_ready():
+    return (
+        own_ship_state["lat"] is not None and
+        own_ship_state["lon"] is not None and
+        own_ship_state["cog_deg"] is not None and
+        own_ship_state["sog_kts"] is not None
+    )
 # -------------------------------------------------
 # VIDEO + YOLO TRACKING
 # -------------------------------------------------
@@ -295,13 +313,14 @@ def generate_frames():
         # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
         # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
         # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok4.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4"
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok4.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4",
+        "C:/Users/myada/OneDrive/Desktop/Ai_smartships/AI_MS2-Simulation-/naval_dock.mp4"
        
     ]
 
@@ -350,6 +369,7 @@ def generate_frames():
                             "last_seen": frame_counter,
                             "sim_id": sim_target_id
                         }
+                        
 
                     else:
                         # Update last seen
@@ -401,11 +421,11 @@ def generate_frames():
             if selected_object_id is not None:
 
                 if selected_object_id in track_metadata:
-
+                    # print("------------------------------------>",track_metadata)
                     sim_id = track_metadata[selected_object_id]["sim_id"]
-
+                    print("----------------------------track_metadata_id",sim_id)
                     target = next((t for t in targets if t["object_id"] == sim_id), None)
-
+                    # print("-------------------------->inside target",target)
                     # if target:
                     #     current_display_data = {
                     #         "id": selected_object_id,
@@ -424,45 +444,133 @@ def generate_frames():
                     #         "collision": target["collision_status"],
                     #         "navy_type": target["navy_type"]
                     #     }
-                    if target:
+                    # if target:
                         
 
-                        dcpa, tcpa = compute_cpa_tcpa(own_ship, target)
+                    #     dcpa, tcpa = compute_cpa_tcpa(own_ship_state, target)
 
+                    #     target_with_cpa = target.copy()
+                    #     target_with_cpa["cpa_m"] = dcpa
+                    #     target_with_cpa["tcpa_min"] = tcpa
+
+                    #     # rel_bearing = sim_target["bearing_relative_deg"]
+                    #     rel_bearing =relative_bearing(own_ship_state,target)
+                    #     action = colregs_decision(target_with_cpa, own_ship_state,rel_bearing,visibility)
+
+                    #     current_display_data = {
+
+                    #         # OWN SHIP
+                    #         "own_heading": own_ship_state["heading_deg_T"],
+                    #         "own_speed": own_ship_state["speed_kts"],
+
+                    #         # TARGET
+                    #         "id": selected_object_id,
+                    #         "class": target["class"],
+                    #         "mmsi": target["mmsi"],
+                    #         "navy_type": target["navy_type"],
+
+                    #         "bearing_degree": target["bearing_deg_T"],
+                    #         "bearing_relative_degree": target["bearing_relative_deg"],
+
+                    #         "speed": target["speed_kts"],
+                    #         "course": target["course_deg_T"],
+
+                    #         "range": target["range_m"],
+                    #         "cpa": target["cpa_m"],
+                    #         "threat": target["threat_level"],
+                    #         "collision": target["collision_status"],
+
+                    #         # ACTION
+                    #         "recommended_action": action
+                    # }
+
+
+
+                    
+                    if target:
+
+                        # --- Position difference ---
+                        dx, dy = latlon_to_xy(
+                            own_ship_state["lat"],
+                            own_ship_state["lon"],
+                            target["position_latlon"]["lat"],
+                            target["position_latlon"]["lon"]
+                        )
+
+                        range_m = math.hypot(dx, dy)
+
+                        # --- Bearings ---
+                        rel_bearing = relative_bearing(
+                            {
+                                "position_latlon": {"lat": own_ship_state["lat"], "lon": own_ship_state["lon"]},
+                                "cog_deg": own_ship_state["cog_deg"]
+                            },
+                            target
+                        )
+
+                        true_bearing = (rel_bearing + own_ship_state["heading_deg_T"]) % 360
+
+                        # --- CPA / TCPA ---
+                        own_for_cpa = {
+                            "position_latlon": {"lat": own_ship_state["lat"], "lon": own_ship_state["lon"]},
+                            "cog_deg": own_ship_state["cog_deg"],
+                            "sog_kts": own_ship_state["sog_kts"],
+                            "heading_deg_T": own_ship_state["heading_deg_T"],
+                            "vessel_type": own_ship_state["vessel_type"]
+                        }
+
+                        target_for_cpa = target.copy()
+                        dcpa, tcpa = compute_cpa_tcpa(own_for_cpa, target_for_cpa)
+
+                        # --- Collision level ---
+                        collision = "GREEN"
+                        if dcpa < 500 and 0 < tcpa < 5:
+                            collision = "RED"
+                        elif dcpa < 1000 and 0 < tcpa < 15:
+                            collision = "YELLOW"
+
+                        # --- Threat level ---
+                        if collision == "RED":
+                            threat = "HIGH"
+                        elif collision == "YELLOW":
+                            threat = "MEDIUM"
+                        else:
+                            threat = "LOW"
+
+                        # --- COLREG action ---
                         target_with_cpa = target.copy()
                         target_with_cpa["cpa_m"] = dcpa
                         target_with_cpa["tcpa_min"] = tcpa
 
-                        # rel_bearing = sim_target["bearing_relative_deg"]
-                        rel_bearing =relative_bearing(own_ship,target)
-                        action = colregs_decision(target_with_cpa, own_ship,rel_bearing,visibility)
+                        action = colregs_decision(
+                            target_with_cpa,
+                            own_for_cpa,
+                            rel_bearing,
+                            
+                        )
 
+                        # --- Final data for UI ---
                         current_display_data = {
-
-                            # OWN SHIP
-                            "own_heading": own_ship["heading_deg_T"],
-                            "own_speed": own_ship["speed_kts"],
-
-                            # TARGET
                             "id": selected_object_id,
                             "class": target["class"],
                             "mmsi": target["mmsi"],
                             "navy_type": target["navy_type"],
 
-                            "bearing_degree": target["bearing_deg_T"],
-                            "bearing_relative_degree": target["bearing_relative_deg"],
+                            "bearing_degree": true_bearing,
+                            "bearing_relative_degree": rel_bearing,
 
-                            "speed": target["speed_kts"],
-                            "course": target["course_deg_T"],
+                            "speed": target["sog_kts"],
+                            "course": target["cog_deg"],
 
-                            "range": target["range_m"],
-                            "cpa": target["cpa_m"],
-                            "threat": target["threat_level"],
-                            "collision": target["collision_status"],
+                            "range": range_m,
+                            "cpa": dcpa,
 
-                            # ACTION
+                            "threat": threat,
+                            "collision": collision,
+
                             "recommended_action": action
                         }
+                        
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame_bytes = buffer.tobytes()

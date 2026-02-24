@@ -1,10 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<title>Naval Tactical Display</title>
+  <head>
+    <title>Naval Tactical Display</title>
 
-
-<!-- 
+    <!-- 
 
 <style>
 
@@ -173,375 +172,388 @@ body {
 
 </style>  -->
 
-
-
-<style>
-    /* ===========================
+    <style>
+      /* ===========================
    INDIAN NAVY MINIMAL THEME
    (Structure unchanged)
 =========================== */
 
-body {
-    margin: 0;
-    background: #0b1c2d; /* Deep Naval Blue */
-    overflow: hidden;
-    display: flex;
-    height: 100vh;
-    font-family: "Segoe UI", sans-serif;
-}
+      body {
+        margin: 0;
+        background: #0b1c2d; /* Deep Naval Blue */
+        overflow: hidden;
+        display: flex;
+        height: 100vh;
+        font-family: "Segoe UI", sans-serif;
+      }
 
-/* LEFT SIDE - VIDEO (90%) */
-#videoContainer {
-    width: 90%;
-    height: 100%;
-}
+      /* LEFT SIDE - VIDEO (90%) */
+      #videoContainer {
+        width: 90%;
+        height: 100%;
+      }
 
-#videoStream {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: black;
-}
+      #videoStream {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: black;
+      }
 
-/* RIGHT SIDE - SENSOR PANEL (10%) */
-#sensorPanel {
-    width: 10%;
-    height: 100%;
-    background: #102a43; /* Steel Blue */
-    border-left: 1px solid #00a8cc; /* Radar Cyan */
-    color: #e6f2ff; /* Soft Naval White */
-    font-size: 8px;
-    padding: 15px;
-    box-sizing: border-box;
-}
+      /* RIGHT SIDE - SENSOR PANEL (10%) */
+      #sensorPanel {
+        width: 10%;
+        height: 100%;
+        background: #102a43; /* Steel Blue */
+        border-left: 1px solid #00a8cc; /* Radar Cyan */
+        color: #e6f2ff; /* Soft Naval White */
+        font-size: 8px;
+        padding: 15px;
+        box-sizing: border-box;
+      }
 
-/* Section Headers */
-#sensorPanel h3 {
-    margin-top: 0;
-    font-size: 10px;
-    text-align: center;
-    border-bottom: 1px solid #00a8cc;
-    padding-bottom: 8px;
-    color: #ffd700; /* Naval Gold */
-    letter-spacing: 1px;
-}
+      /* Section Headers */
+      #sensorPanel h3 {
+        margin-top: 0;
+        font-size: 10px;
+        text-align: center;
+        border-bottom: 1px solid #00a8cc;
+        padding-bottom: 8px;
+        color: #ffd700; /* Naval Gold */
+        letter-spacing: 1px;
+      }
 
-/* Data Lines */
-.dataLine {
-    margin-bottom: 12px;
-    word-wrap: break-word;
-}
+      /* Data Lines */
+      .dataLine {
+        margin-bottom: 12px;
+        word-wrap: break-word;
+      }
 
-/* Status Colors */
-.red { color: #ff3b3b; font-weight: bold; }
-.yellow { color: #ffb703; font-weight: bold; }
-.green { color: #2ec4b6; font-weight: bold; }
+      /* Status Colors */
+      .red {
+        color: #ff3b3b;
+        font-weight: bold;
+      }
+      .yellow {
+        color: #ffb703;
+        font-weight: bold;
+      }
+      .green {
+        color: #2ec4b6;
+        font-weight: bold;
+      }
 
-/* MINI MAP */
-#miniMap {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 220px;
-    height: 120px;
-    border: 3px solid #00a8cc;
-    border-radius: 8px;
-    overflow: hidden;
-    z-index: 1000;
-    box-shadow: 0 0 12px rgba(0,168,204,0.4);
-}
+      /* MINI MAP */
+      #miniMap {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 220px;
+        height: 120px;
+        border: 3px solid #00a8cc;
+        border-radius: 8px;
+        overflow: hidden;
+        z-index: 1000;
+        box-shadow: 0 0 12px rgba(0, 168, 204, 0.4);
+      }
 
-#miniMap.fullscreen {
-    width: 100vw;
-    height: 100vh;
-    bottom: 0;
-    right: 0;
-    border-radius: 0;
-    border: none;
-}
+      #miniMap.fullscreen {
+        width: 100vw;
+        height: 100vh;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+        border: none;
+      }
 
-/* Route iframe */
-#routeFrame {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
+      /* Route iframe */
+      #routeFrame {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
 
-/* Expand / Close Buttons */
-#closeMap {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: #1e3a5f;
-    color: #ffd700;
-    border: none;
-    padding: 10px 14px;
-    display: none;
-    z-index: 2000;
-    cursor: pointer;
-}
+      /* Expand / Close Buttons */
+      #closeMap {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: #1e3a5f;
+        color: #ffd700;
+        border: none;
+        padding: 10px 14px;
+        display: none;
+        z-index: 2000;
+        cursor: pointer;
+      }
 
-#expandMap {
-    position: absolute;
-    bottom: 60px;
-    right: 20px;
-    background: #1e3a5f;
-    color: #ffd700;
-    border: none;
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 2000;
-}
+      #expandMap {
+        position: absolute;
+        bottom: 60px;
+        right: 20px;
+        background: #1e3a5f;
+        color: #ffd700;
+        border: none;
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 2000;
+      }
 
-#expandMap:hover,
-#closeMap:hover {
-    background: #ffd700;
-    color: #0b1c2d;
-}
+      #expandMap:hover,
+      #closeMap:hover {
+        background: #ffd700;
+        color: #0b1c2d;
+      }
 
-/* ===========================
+      /* ===========================
    FULLSCREEN ROUTE PANEL
 =========================== */
 
-#routePanelHost {
-    position: absolute;
-    top: 80px;
-    left: 20px;
-    background: rgba(16, 42, 67, 0.95); /* Dark Steel Blue */
-    color: #e6f2ff;
-    padding: 12px;
-    border-radius: 8px;
-    z-index: 3000;
-    display: none;
-    width: 200px;
-    border: 1px solid #00a8cc;
-}
+      #routePanelHost {
+        position: absolute;
+        top: 80px;
+        left: 20px;
+        background: rgba(16, 42, 67, 0.95); /* Dark Steel Blue */
+        color: #e6f2ff;
+        padding: 12px;
+        border-radius: 8px;
+        z-index: 3000;
+        display: none;
+        width: 200px;
+        border: 1px solid #00a8cc;
+      }
 
-#routePanelHost input {
-    width: 100%;
-    margin-bottom: 6px;
-    padding: 4px;
-    background: #0b1c2d;
-    border: 1px solid #00a8cc;
-    color: #e6f2ff;
-    border-radius: 4px;
-}
+      #routePanelHost input {
+        width: 100%;
+        margin-bottom: 6px;
+        padding: 4px;
+        background: #0b1c2d;
+        border: 1px solid #00a8cc;
+        color: #e6f2ff;
+        border-radius: 4px;
+      }
 
-#routePanelHost button {
-    width: 100%;
-    margin-top: 4px;
-    padding: 6px;
-    border: none;
-    background: #1e3a5f;
-    color: #ffd700;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 4px;
-}
+      #routePanelHost button {
+        width: 100%;
+        margin-top: 4px;
+        padding: 6px;
+        border: none;
+        background: #1e3a5f;
+        color: #ffd700;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 4px;
+      }
 
-#routePanelHost button:hover {
-    background: #ffd700;
-    color: #0b1c2d;
-}
+      #routePanelHost button:hover {
+        background: #ffd700;
+        color: #0b1c2d;
+      }
 
-/* Show panel ONLY in fullscreen */
-#miniMap.fullscreen ~ #routePanelHost {
-    display: block;
-}
+      /* Show panel ONLY in fullscreen */
+      #miniMap.fullscreen ~ #routePanelHost {
+        display: block;
+      }
 
-/* Follow Button */
-#followBtnHost {
-    position: absolute;
-    top: 20px;
-    right: 120px;
-    background: #1e3a5f;
-    color: #ffd700;
-    border: none;
-    padding: 8px 12px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 3000;
-    display: none;
-    border-radius: 4px;
-}
+      /* Follow Button */
+      #followBtnHost {
+        position: absolute;
+        top: 20px;
+        right: 120px;
+        background: #1e3a5f;
+        color: #ffd700;
+        border: none;
+        padding: 8px 12px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 3000;
+        display: none;
+        border-radius: 4px;
+      }
 
-#followBtnHost:hover {
-    background: #ffd700;
-    color: #0b1c2d;
-}
+      #followBtnHost:hover {
+        background: #ffd700;
+        color: #0b1c2d;
+      }
 
-#miniMap.fullscreen ~ #followBtnHost {
-    display: block;
-}
-</style>
-</head>
+      #miniMap.fullscreen ~ #followBtnHost {
+        display: block;
+      }
+    </style>
+  </head>
 
-<body>
+  <body>
+    <div id="videoContainer">
+      <img id="videoStream" src="{{ url_for('video') }}" />
+    </div>
 
-<div id="videoContainer">
-    <img id="videoStream" src="{{ url_for('video') }}">
-</div>
+    <div id="miniMap">
+      <iframe id="routeFrame" src="http://192.168.0.175:5002:5002/"></iframe>
+    </div>
 
-<div id="miniMap">
-    <iframe id="routeFrame" src="http://192.168.59.100:5002/"></iframe>
-</div>
+    <!-- FULLSCREEN ROUTE PANEL -->
+    <div id="routePanelHost">
+      <b>Demo Route</b><br />
+      <input id="startLatHost" placeholder="Start Lat" />
+      <input id="startLngHost" placeholder="Start Lng" />
+      <input id="endLatHost" placeholder="End Lat" />
+      <input id="endLngHost" placeholder="End Lng" />
 
+      <button id="generateRouteHost">Generate Route</button>
+      <button id="clearRouteHost">Clear Route</button>
+    </div>
 
-<!-- FULLSCREEN ROUTE PANEL -->
-<div id="routePanelHost">
-    <b>Demo Route</b><br />
-    <input id="startLatHost" placeholder="Start Lat" />
-    <input id="startLngHost" placeholder="Start Lng" />
-    <input id="endLatHost" placeholder="End Lat" />
-    <input id="endLngHost" placeholder="End Lng" />
-  
-    <button id="generateRouteHost">Generate Route</button>
-    <button id="clearRouteHost">Clear Route</button>
-  </div>
-  
-  <button id="followBtnHost">Follow Ship</button>
+    <button id="followBtnHost">Follow Ship</button>
 
+    <button id="expandMap">⛶</button>
+    <button id="closeMap" style="display: none">←</button>
 
-<button id="expandMap">⛶</button>
-<button id="closeMap" style="display:none;">←</button>
-
-<div id="sensorPanel">
-
-    <!-- <hr style="border-color:#00ffcc;"> -->
-    <!-- <h3>OWN SHIP</h3>
+    <div id="sensorPanel">
+      <!-- <hr style="border-color:#00ffcc;"> -->
+      <!-- <h3>OWN SHIP</h3>
 
     <div class="dataLine">Heading: <span id="own_heading">-</span> °T</div>
     <div class="dataLine">Speed: <span id="own_speed">-</span> kts</div> -->
-    <hr style="border-color:#00ffcc;">
-    <!-- <h3>OWN SHIP (RAW)</h3> -->
+      <hr style="border-color: #00ffcc" />
+      <!-- <h3>OWN SHIP (RAW)</h3> -->
 
-    <h3>OWN SHIP</h3>
+      <h3>OWN SHIP</h3>
 
-    <div id="own_ship_display" style="font-size:10px; color:#00ffcc;">
+      <div id="own_ship_display" style="font-size: 10px; color: #00ffcc">
         Waiting for data...
-    </div>
+      </div>
 
-    <hr style="border-color:#00ffcc;">
-    <h3>TARGET DATA</h3>
+      <hr style="border-color: #00ffcc" />
+      <h3>TARGET DATA</h3>
 
-    <div class="dataLine">ID: <span id="id">-</span></div>
-    <div class="dataLine">Class: <span id="class">-</span></div>
-    <div class="dataLine">MMSI: <span id="mmsi">-</span></div>
-    <div class="dataLine">Navy Type: <span id="navy_type">-</span></div>
+      <div class="dataLine">ID: <span id="id">-</span></div>
+      <div class="dataLine">Class: <span id="class">-</span></div>
+      <div class="dataLine">MMSI: <span id="mmsi">-</span></div>
+      <div class="dataLine">Navy Type: <span id="navy_type">-</span></div>
 
-    <div class="dataLine">Bearing (True): <span id="bearing_degree">-</span> °</div>
-    <div class="dataLine">Bearing (Relative): <span id="bearing_relative_degree">-</span> °</div>
+      <div class="dataLine">
+        Bearing (True): <span id="bearing_degree">-</span> °
+      </div>
+      <div class="dataLine">
+        Bearing (Relative): <span id="bearing_relative_degree">-</span> °
+      </div>
 
-    <div class="dataLine">Speed: <span id="speed">-</span> kts</div>
-    <div class="dataLine">Course: <span id="course">-</span> °T</div>
+      <div class="dataLine">Speed: <span id="speed">-</span> kts</div>
+      <div class="dataLine">Course: <span id="course">-</span> °T</div>
 
-    <div class="dataLine">Range: <span id="range">-</span> m</div>
-    <div class="dataLine">CPA: <span id="cpa">-</span> m</div>
+      <div class="dataLine">Range: <span id="range">-</span> m</div>
+      <div class="dataLine">CPA: <span id="cpa">-</span> m</div>
 
-    <div class="dataLine">Threat: <span id="threat">-</span></div>
-    <div class="dataLine">Collision: <span id="collision">-</span></div>
+      <div class="dataLine">Threat: <span id="threat">-</span></div>
+      <div class="dataLine">Collision: <span id="collision">-</span></div>
 
+      <hr style="border-color: #00ffcc" />
 
-    <hr style="border-color:#00ffcc;">
-
-    <h3>ACTION</h3>
-    <div class="dataLine">
+      <h3>ACTION</h3>
+      <div class="dataLine">
         <span id="recommended_action">-</span>
+      </div>
     </div>
 
-</div>
+    <script>
+      let objects = [];
 
-<script>
-let objects = [];
-
-// Fetch detected objects
-function updateObjects() {
-    fetch("/objects")
-        .then(res => res.json())
-        .then(data => {
+      // Fetch detected objects
+      function updateObjects() {
+        fetch("/objects")
+          .then((res) => res.json())
+          .then((data) => {
             objects = data;
-        });
-}
-setInterval(updateObjects, 300);
+          });
+      }
+      setInterval(updateObjects, 300);
 
-// Click detection with proper scaling
-document.getElementById("videoStream").addEventListener("click", function(event) {
+      // Click detection with proper scaling
+      document
+        .getElementById("videoStream")
+        .addEventListener("click", function (event) {
+          const rect = this.getBoundingClientRect();
 
-    const rect = this.getBoundingClientRect();
+          const displayWidth = rect.width;
+          const displayHeight = rect.height;
 
-    const displayWidth = rect.width;
-    const displayHeight = rect.height;
+          const actualWidth = this.naturalWidth;
+          const actualHeight = this.naturalHeight;
 
-    const actualWidth = this.naturalWidth;
-    const actualHeight = this.naturalHeight;
+          const scaleX = actualWidth / displayWidth;
+          const scaleY = actualHeight / displayHeight;
 
-    const scaleX = actualWidth / displayWidth;
-    const scaleY = actualHeight / displayHeight;
+          const clickX = (event.clientX - rect.left) * scaleX;
+          const clickY = (event.clientY - rect.top) * scaleY;
 
-    const clickX = (event.clientX - rect.left) * scaleX;
-    const clickY = (event.clientY - rect.top) * scaleY;
+          objects.forEach((obj) => {
+            if (
+              clickX >= obj.x1 &&
+              clickX <= obj.x2 &&
+              clickY >= obj.y1 &&
+              clickY <= obj.y2
+            ) {
+              console.log("Clicked object ID:", obj.id);
 
-    objects.forEach(obj => {
-        if (clickX >= obj.x1 && clickX <= obj.x2 &&
-            clickY >= obj.y1 && clickY <= obj.y2) {
-
-            console.log("Clicked object ID:", obj.id);
-
-            fetch("/select_object", {
+              fetch("/select_object", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({id: obj.id})
-            });
-        }
-    });
-});
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: obj.id }),
+              });
+            }
+          });
+        });
 
-// Update sensor panel
-function updateSensorData() {
-    fetch("/sensor_data")
-        .then(res => res.json())
-        .then(data => {
-            
-
-
+      // Update sensor panel
+      function updateSensorData() {
+        fetch("/sensor_data")
+          .then((res) => res.json())
+          .then((data) => {
             // // OWN SHIP
             // document.getElementById("own_heading").innerText =
             //     data.own_heading ? data.own_heading.toFixed(1) : "-";
 
             // document.getElementById("own_speed").innerText =
             //     data.own_speed ? data.own_speed.toFixed(1) : "-";
-            
+
             // ACTION
             document.getElementById("recommended_action").innerText =
-                data.recommended_action || "-";
+              data.recommended_action || "-";
             // Identification
             document.getElementById("id").innerText = data.id || "-";
             document.getElementById("class").innerText = data.class || "-";
             document.getElementById("mmsi").innerText = data.mmsi || "-";
-            document.getElementById("navy_type").innerText = data.navy_type || "-";
+            document.getElementById("navy_type").innerText =
+              data.navy_type || "-";
 
             // Bearings
             document.getElementById("bearing_degree").innerText =
-                data.bearing_degree ? data.bearing_degree.toFixed(1) : "-";
+              data.bearing_degree ? data.bearing_degree.toFixed(1) : "-";
 
             document.getElementById("bearing_relative_degree").innerText =
-                data.bearing_relative_degree ? data.bearing_relative_degree.toFixed(1) : "-";
+              data.bearing_relative_degree
+                ? data.bearing_relative_degree.toFixed(1)
+                : "-";
 
             // Motion
-            document.getElementById("speed").innerText =
-                data.speed ? data.speed.toFixed(1) : "-";
+            document.getElementById("speed").innerText = data.speed
+              ? data.speed.toFixed(1)
+              : "-";
 
-            document.getElementById("course").innerText =
-                data.course ? data.course.toFixed(1) : "-";
+            document.getElementById("course").innerText = data.course
+              ? data.course.toFixed(1)
+              : "-";
 
             // Tactical
-            document.getElementById("range").innerText =
-                data.range ? data.range.toFixed(1) : "-";
+            document.getElementById("range").innerText = data.range
+              ? data.range.toFixed(1)
+              : "-";
 
-            document.getElementById("cpa").innerText =
-                data.cpa ? data.cpa.toFixed(1) : "-";
+            document.getElementById("cpa").innerText = data.cpa
+              ? data.cpa.toFixed(1)
+              : "-";
 
             document.getElementById("threat").innerText = data.threat || "-";
 
@@ -550,277 +562,267 @@ function updateSensorData() {
             collisionElem.innerText = data.collision || "-";
             collisionElem.className = "";
 
-            if (data.collision === "RED")
-                collisionElem.classList.add("red");
+            if (data.collision === "RED") collisionElem.classList.add("red");
             else if (data.collision === "YELLOW")
-                collisionElem.classList.add("yellow");
-            else
-                collisionElem.classList.add("green");
-        });
-}
-setInterval(updateSensorData, 500);
+              collisionElem.classList.add("yellow");
+            else collisionElem.classList.add("green");
+          });
+      }
+      setInterval(updateSensorData, 500);
 
-const mini = document.getElementById("miniMap");
-const expand = document.getElementById("expandMap");
-const close = document.getElementById("closeMap");
+      const mini = document.getElementById("miniMap");
+      const expand = document.getElementById("expandMap");
+      const close = document.getElementById("closeMap");
 
-expand.onclick = () => {
-    mini.classList.add("fullscreen");
-    expand.style.display = "none";
-    close.style.display = "block";
-};
+      expand.onclick = () => {
+        mini.classList.add("fullscreen");
+        expand.style.display = "none";
+        close.style.display = "block";
+      };
 
-close.onclick = () => {
-    mini.classList.remove("fullscreen");
-    close.style.display = "none";
-    expand.style.display = "block";
-};
+      close.onclick = () => {
+        mini.classList.remove("fullscreen");
+        close.style.display = "none";
+        expand.style.display = "block";
+      };
 
-function enterFullscreen() {
-    const elem = document.documentElement;
+      function enterFullscreen() {
+        const elem = document.documentElement;
 
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) { // Safari
-        elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) { // IE
-        elem.msRequestFullscreen();
-    }
-}
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) {
+          // Safari
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+          // IE
+          elem.msRequestFullscreen();
+        }
+      }
 
+      // =============================
+      // MINI MAP ADVANCED CONTROLS
+      // =============================
 
+      const frame = document.getElementById("routeFrame");
+      const startLatHost = document.getElementById("startLatHost");
+      const startLngHost = document.getElementById("startLngHost");
+      const endLatHost = document.getElementById("endLatHost");
+      const endLngHost = document.getElementById("endLngHost");
+      const followBtn = document.getElementById("followBtnHost");
 
-// =============================
-// MINI MAP ADVANCED CONTROLS
-// =============================
+      let followState = false;
 
-const frame = document.getElementById("routeFrame");
-const startLatHost = document.getElementById("startLatHost");
-const startLngHost = document.getElementById("startLngHost");
-const endLatHost = document.getElementById("endLatHost");
-const endLngHost = document.getElementById("endLngHost");
-const followBtn = document.getElementById("followBtnHost");
+      // FOLLOW BUTTON
+      followBtn.onclick = () => {
+        followState = !followState;
 
-let followState = false;
+        frame.contentWindow.postMessage(
+          { type: followState ? "FOLLOW_ON" : "FOLLOW_OFF" },
+          "*",
+        );
 
-// FOLLOW BUTTON
-followBtn.onclick = () => {
-  followState = !followState;
+        followBtn.innerHTML = followState ? "🎯 Following" : "🧭 Free Pan";
 
-  frame.contentWindow.postMessage(
-    { type: followState ? "FOLLOW_ON" : "FOLLOW_OFF" },
-    "*"
-  );
+        frame.contentWindow.postMessage(
+          { type: "FOLLOW_ZOOM", zoom: followState ? 7 : 5 },
+          "*",
+        );
+      };
 
-  followBtn.innerHTML = followState ? "🎯 Following" : "🧭 Free Pan";
+      // RECEIVE MAP CLICK EVENTS FROM IFRAME
+      window.addEventListener("message", (e) => {
+        const msg = e.data;
 
-  frame.contentWindow.postMessage(
-    { type: "FOLLOW_ZOOM", zoom: followState ? 7 : 5 },
-    "*"
-  );
-};
+        if (msg.type === "MAP_START_SELECTED") {
+          startLatHost.value = msg.lat.toFixed(5);
+          startLngHost.value = msg.lng.toFixed(5);
+        }
 
-// RECEIVE MAP CLICK EVENTS FROM IFRAME
-window.addEventListener("message", (e) => {
-  const msg = e.data;
+        if (msg.type === "MAP_END_SELECTED") {
+          endLatHost.value = msg.lat.toFixed(5);
+          endLngHost.value = msg.lng.toFixed(5);
+        }
+      });
 
-  if (msg.type === "MAP_START_SELECTED") {
-    startLatHost.value = msg.lat.toFixed(5);
-    startLngHost.value = msg.lng.toFixed(5);
-  }
+      // GENERATE ROUTE
+      document.getElementById("generateRouteHost").onclick = () => {
+        const sLat = parseFloat(startLatHost.value);
+        const sLng = parseFloat(startLngHost.value);
+        const eLat = parseFloat(endLatHost.value);
+        const eLng = parseFloat(endLngHost.value);
 
-  if (msg.type === "MAP_END_SELECTED") {
-    endLatHost.value = msg.lat.toFixed(5);
-    endLngHost.value = msg.lng.toFixed(5);
-  }
-});
+        if ([sLat, sLng, eLat, eLng].some(isNaN)) return;
 
-// GENERATE ROUTE
-document.getElementById("generateRouteHost").onclick = () => {
-  const sLat = parseFloat(startLatHost.value);
-  const sLng = parseFloat(startLngHost.value);
-  const eLat = parseFloat(endLatHost.value);
-  const eLng = parseFloat(endLngHost.value);
+        frame.contentWindow.postMessage(
+          {
+            type: "MANUAL_ROUTE",
+            start: [sLng, sLat],
+            end: [eLng, eLat],
+          },
+          "*",
+        );
+      };
 
-  if ([sLat, sLng, eLat, eLng].some(isNaN)) return;
+      // CLEAR ROUTE
+      document.getElementById("clearRouteHost").onclick = () => {
+        frame.contentWindow.postMessage({ type: "CLEAR_ROUTE" }, "*");
 
-  frame.contentWindow.postMessage(
-    {
-      type: "MANUAL_ROUTE",
-      start: [sLng, sLat],
-      end: [eLng, eLat],
-    },
-    "*"
-  );
-};
+        startLatHost.value = "";
+        startLngHost.value = "";
+        endLatHost.value = "";
+        endLngHost.value = "";
+      };
 
-// CLEAR ROUTE
-document.getElementById("clearRouteHost").onclick = () => {
-  frame.contentWindow.postMessage({ type: "CLEAR_ROUTE" }, "*");
+      // function updateOwnShip() {
 
-  startLatHost.value = "";
-  startLngHost.value = "";
-  endLatHost.value = "";
-  endLngHost.value = "";
-};
+      // fetch("http://192.168.59.100:5002/route_simulation_state")
+      //     .then(response => response.json())
+      //     .then(data => {
 
-// function updateOwnShip() {
+      //         // Extract live_state only
+      //         const liveState = data.live_state;
 
-// fetch("http://192.168.59.100:5002/route_simulation_state")
-//     .then(response => response.json())
-//     .then(data => {
+      //         // Show full live_state JSON
+      //         document.getElementById("own_ship_raw").innerText =
+      //             JSON.stringify(liveState, null, 2);
 
-//         // Extract live_state only
-//         const liveState = data.live_state;
+      //     })
+      //     .catch(error => {
+      //         document.getElementById("own_ship_raw").innerText =
+      //             "API ERROR / NOT REACHABLE";
+      //         console.error("Own Ship API Error:", error);
+      //     });
+      // }
 
-//         // Show full live_state JSON
-//         document.getElementById("own_ship_raw").innerText =
-//             JSON.stringify(liveState, null, 2);
+      // // Refresh every 100ms
+      // setInterval(updateOwnShip, 100);
 
-//     })
-//     .catch(error => {
-//         document.getElementById("own_ship_raw").innerText =
-//             "API ERROR / NOT REACHABLE";
-//         console.error("Own Ship API Error:", error);
-//     });
-// }
+      // function updateOwnShip() {
 
-// // Refresh every 100ms
-// setInterval(updateOwnShip, 100);
+      // fetch("http://192.168.59.100:5002/route_simulation_state")
+      //     .then(response => response.json())
+      //     .then(data => {
 
-// function updateOwnShip() {
+      //         // Show raw for debug
+      //         document.getElementById("own_ship_raw").innerText =
+      //             JSON.stringify(data.live_state, null, 2);
 
-// fetch("http://192.168.59.100:5002/route_simulation_state")
-//     .then(response => response.json())
-//     .then(data => {
+      //         // 🔥 Send to backend to store
+      //         return fetch("/update_own_ship", {
+      //             method: "POST",
+      //             headers: {
+      //                 "Content-Type": "application/json"
+      //             },
+      //             body: JSON.stringify(data)
+      //         });
 
-//         // Show raw for debug
-//         document.getElementById("own_ship_raw").innerText =
-//             JSON.stringify(data.live_state, null, 2);
+      //     })
+      //     .then(res => res.json())
+      //     .then(result => {
+      //         console.log("Backend store status:", result.status);
+      //     })
+      //     .catch(error => {
+      //         document.getElementById("own_ship_raw").innerText =
+      //             "API ERROR / NOT REACHABLE";
+      //         console.error("Own Ship Flow Error:", error);
+      //     });
+      // }
 
-//         // 🔥 Send to backend to store
-//         return fetch("/update_own_ship", {
-//             method: "POST",
-//             headers: {
-//                 "Content-Type": "application/json"
-//             },
-//             body: JSON.stringify(data)
-//         });
+      // setInterval(updateOwnShip, 100);
 
-//     })
-//     .then(res => res.json())
-//     .then(result => {
-//         console.log("Backend store status:", result.status);
-//     })
-//     .catch(error => {
-//         document.getElementById("own_ship_raw").innerText =
-//             "API ERROR / NOT REACHABLE";
-//         console.error("Own Ship Flow Error:", error);
-//     });
-// }
+      // Trigger on first click anywhere
+      document.addEventListener("click", function enableFS() {
+        enterFullscreen();
+        document.removeEventListener("click", enableFS);
+      });
+    </script>
 
-// setInterval(updateOwnShip, 100);
+    <script>
+      // function updateOwnShip() {
 
+      // fetch("http://192.168.59.100:5002/route_simulation_state")
+      //     .then(response => response.json())
+      //     .then(data => {
 
+      //         // Send to backend
+      //         return fetch("/update_own_ship", {
+      //             method: "POST",
+      //             headers: {
+      //                 "Content-Type": "application/json"
+      //             },
+      //             body: JSON.stringify(data)
+      //         });
 
+      //     })
+      //     .then((data) => {
+      //         // Now fetch stored own ship from backend
+      //         console.log(data)
+      //         return fetch("/own_ship");
 
-// Trigger on first click anywhere
-document.addEventListener("click", function enableFS() {
-    enterFullscreen();
-    document.removeEventListener("click", enableFS);
-});
-</script>
+      //     })
+      //     .then(res => res.json())
+      //     .then(own => {
 
+      //         document.getElementById("own_lat").innerText =
+      //             own.lat ? own.lat.toFixed(6) : "-";
 
+      //         document.getElementById("own_lon").innerText =
+      //             own.lon ? own.lon.toFixed(6) : "-";
 
-<script>
+      //         document.getElementById("own_heading").innerText =
+      //             own.heading_deg_T ? own.heading_deg_T.toFixed(1) : "-";
 
+      //         document.getElementById("own_cog").innerText =
+      //             own.cog_deg ? own.cog_deg.toFixed(1) : "-";
 
-// function updateOwnShip() {
+      //         document.getElementById("own_speed").innerText =
+      //             own.sog_kts ? own.sog_kts.toFixed(1) : "-";
 
-// fetch("http://192.168.59.100:5002/route_simulation_state")
-//     .then(response => response.json())
-//     .then(data => {
+      //         document.getElementById("own_rot").innerText =
+      //             own.rate_of_turn ? own.rate_of_turn.toFixed(3) : "-";
 
-//         // Send to backend
-//         return fetch("/update_own_ship", {
-//             method: "POST",
-//             headers: {
-//                 "Content-Type": "application/json"
-//             },
-//             body: JSON.stringify(data)
-//         });
+      //         document.getElementById("own_update").innerText =
+      //             own.last_update
+      //                 ? new Date(own.last_update * 1000).toLocaleTimeString()
+      //                 : "-";
 
-//     })
-//     .then((data) => {
-//         // Now fetch stored own ship from backend
-//         console.log(data)
-//         return fetch("/own_ship");
+      //     })
+      //     .catch(error => {
+      //         console.error("Own Ship Flow Error:", error);
+      //     });
+      // }
 
-//     })
-//     .then(res => res.json())
-//     .then(own => {
+      // setInterval(updateOwnShip, 100);
 
-//         document.getElementById("own_lat").innerText =
-//             own.lat ? own.lat.toFixed(6) : "-";
+      function fetchOwnShipFromBackend() {
+        fetch("/own_ship")
+          .then((response) => response.json())
+          .then((data) => {
+            const displayDiv = document.getElementById("own_ship_display");
 
-//         document.getElementById("own_lon").innerText =
-//             own.lon ? own.lon.toFixed(6) : "-";
-
-//         document.getElementById("own_heading").innerText =
-//             own.heading_deg_T ? own.heading_deg_T.toFixed(1) : "-";
-
-//         document.getElementById("own_cog").innerText =
-//             own.cog_deg ? own.cog_deg.toFixed(1) : "-";
-
-//         document.getElementById("own_speed").innerText =
-//             own.sog_kts ? own.sog_kts.toFixed(1) : "-";
-
-//         document.getElementById("own_rot").innerText =
-//             own.rate_of_turn ? own.rate_of_turn.toFixed(3) : "-";
-
-//         document.getElementById("own_update").innerText =
-//             own.last_update
-//                 ? new Date(own.last_update * 1000).toLocaleTimeString()
-//                 : "-";
-
-//     })
-//     .catch(error => {
-//         console.error("Own Ship Flow Error:", error);
-//     });
-// }
-
-// setInterval(updateOwnShip, 100);
-
-function fetchOwnShipFromBackend() {
-
-fetch("/own_ship")
-    .then(response => response.json())
-    .then(data => {
-
-        const displayDiv = document.getElementById("own_ship_display");
-
-        displayDiv.innerHTML = `
+            displayDiv.innerHTML = `
             Latitude: ${data.lat ?? "-"} <br>
             Longitude: ${data.lon ?? "-"} <br>
             Heading: ${data.heading_deg_T ?? "-"} °T <br>
             COG: ${data.cog_deg ?? "-"} ° <br>
             Speed: ${data.sog_kts ?? "-"} kts <br>
             ROT: ${data.rate_of_turn ?? "-"} <br>
-            Last Update: ${data.last_update 
-                ? new Date(data.last_update * 1000).toLocaleTimeString() 
-                : "-"}
+            Last Update: ${
+              data.last_update
+                ? new Date(data.last_update * 1000).toLocaleTimeString()
+                : "-"
+            }
         `;
-    })
-    .catch(error => {
-        document.getElementById("own_ship_display").innerText =
-            "Error fetching own ship data";
-        console.error(error);
-    });
-}
+          })
+          .catch((error) => {
+            document.getElementById("own_ship_display").innerText =
+              "Error fetching own ship data";
+            console.error(error);
+          });
+      }
 
-setInterval(fetchOwnShipFromBackend, 100);
-
-</script>
-</body>
+      setInterval(fetchOwnShipFromBackend, 100);
+    </script>
+  </body>
 </html>
