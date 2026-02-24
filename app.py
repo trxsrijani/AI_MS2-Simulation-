@@ -4,13 +4,20 @@ import json
 from ultralytics import YOLO
 import time
 import math
+
+import requests
+import threading
+from enum import Enum
+
+from flask_cors import CORS
+
 # -------------------------------------------------
 # LOAD MODEL
 # -------------------------------------------------
 model = YOLO(r"/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/best5.pt")
 
 app = Flask(__name__)
-
+CORS(app)
 # -------------------------------------------------
 # LOAD SENSOR JSON
 # -------------------------------------------------
@@ -18,8 +25,8 @@ with open("/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/sensor_data.js
     fusion_data = json.load(f)
 
 targets = fusion_data["targets"]
-own_ship = fusion_data["own_ship"]
-visibility = fusion_data["simulation_meta"]["visibility"]
+# own_ship = fusion_data["own_ship"]
+# visibility = fusion_data["simulation_meta"]["visibility"]
 
 # -------------------------------------------------
 # GLOBALS
@@ -37,7 +44,51 @@ STALE_THRESHOLD = 30     # frames (~1 sec if 30fps)
 
 
 
-from enum import Enum
+
+# -------------------------------------------------
+# OWN SHIP GLOBAL STATE
+# -------------------------------------------------
+own_ship_state = {
+    "lat": None,
+    "lon": None,
+    "heading_deg_T": None,
+    "cog_deg": None,
+    "sog_kts": None,
+    "rate_of_turn": None,
+    "last_update": None
+}
+
+ROUTE_SIM_API = "http://192.168.59.100:5002/route_simulation_state"
+
+def update_own_ship_loop():
+    global own_ship_state
+
+    while True:
+        try:
+            response = requests.get(ROUTE_SIM_API, timeout=0.2)
+
+            data = response.json()
+
+            live = data.get("live_state", {})
+            pos = live.get("position", {})
+            nav = live.get("navigation", {})
+
+            own_ship_state.update({
+                "lat": pos.get("lat_dms"),
+                "lon":pos.get("lon_dms"),
+                "heading_deg_T": nav.get("heading"),
+                "cog_deg": nav.get("cog"),
+                "sog_kts": nav.get("sog"),
+                "rate_of_turn": nav.get("rate_of_turn"),
+                "last_update": time.time()
+            })
+            print(own_ship_state)
+
+        except Exception as e:
+            print("Own ship API error:", e)
+
+        time.sleep(0.1)  # 100ms refresh
+
 
 class VesselType(Enum):
     NUC = 1
@@ -235,15 +286,23 @@ def generate_frames():
     global visibility
     video_paths = [
 
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation (1).mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (8).mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (7).mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (6).mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (3).mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
-        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Footage_Generation (1).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (8).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (7).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (6).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok-video-0714534f-8b65-4cc6-8aee-e661b1eaad37 (3).mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Maritime_Surveillance_Feed_Generation.mp4",
+        # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/naval_dock.mp4",
         # "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/Naval_Corridor_EOIR_Video_Generation.mp4"
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok1.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok2.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok3.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok4.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok5.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok6.mp4",
+        "/home/tractrix/Desktop/AI_SmartShip/AI_MS2-Simulation-/static/grok7.mp4"
+       
     ]
 
     for video_path in video_paths:
@@ -442,8 +501,40 @@ def select_object():
     selected_object_id = int(request.json["id"])
     return jsonify({"status": "ok"})
 
+
+@app.route('/own_ship', methods=['GET'])
+def get_own_ship():
+    return jsonify(own_ship_state)
+
+@app.route('/update_own_ship', methods=['POST'])
+def update_own_ship():
+
+    global own_ship_state
+
+    data = request.json
+    print(data)
+    try:
+        live = data.get("live_state", {})
+        pos = live.get("position", {})
+        nav = live.get("navigation", {})
+
+        own_ship_state.update({
+            "lat": pos.get("lat"),
+            "lon": pos.get("lon"),
+            "heading_deg_T": nav.get("heading"),
+            "cog_deg": nav.get("cog"),
+            "sog_kts": nav.get("sog"),
+            "rate_of_turn": nav.get("rate_of_turn"),
+            "last_update": time.time()
+        })
+
+        return jsonify({"status": "stored"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 # -------------------------------------------------
 # RUN
 # -------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True, threaded=True)
+    threading.Thread(target=update_own_ship_loop, daemon=True).start()
+    app.run(debug=True,port="5002", threaded=True)
