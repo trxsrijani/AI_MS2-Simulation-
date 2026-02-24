@@ -8,11 +8,11 @@
 
       "track_id": 101,
 
-      "class": "Warship",
+      "class": "Vessel",
 
       "vessel_type": "POWER",
 
-      "mmsi": "WARSHIP-714",
+      "mmsi": "VESSEL-826",
 
       "navy_type": "NAV",
 
@@ -42,11 +42,11 @@
 
       "track_id": 102,
 
-      "class": "Warship",
+      "class": "Vessel",
 
       "vessel_type": "POWER",
 
-      "mmsi": "WARSHIP-102",
+      "mmsi": "VESSEL-102",
 
       "navy_type": "NAV",
 
@@ -76,11 +76,11 @@
 
       "track_id": 103,
 
-      "class": "Warship",
+      "class": "Vessel",
 
       "vessel_type": "POWER",
 
-      "mmsi": "WARSHIP-103",
+      "mmsi": "VESSEL-103",
 
       "navy_type": "NAV",
 
@@ -110,11 +110,11 @@
 
       "track_id": 104,
 
-      "class": "Warship",
+      "class": "Vessel",
 
       "vessel_type": "POWER",
 
-      "mmsi": "WARSHIP-104",
+      "mmsi": "VESSEL-104",
 
       "navy_type": "NAV",
 
@@ -178,11 +178,11 @@
 
       "track_id": 201,
 
-      "class": "FishingVessel",
+      "class": "Boat",
 
       "vessel_type": "POWER",
 
-      "mmsi": null,
+      "mmsi": "BOAT-445",
 
       "navy_type": "CIV",
 
@@ -212,11 +212,11 @@
 
       "track_id": 202,
 
-      "class": "CargoVessel",
+      "class": "Boat",
 
       "vessel_type": "POWER",
 
-      "mmsi": null,
+      "mmsi": "BOAT-875",
 
       "navy_type": "CIV",
 
@@ -246,11 +246,11 @@
 
       "track_id": 203,
 
-      "class": "SmallCraft",
+      "class": "Boat",
 
       "vessel_type": "POWER",
 
-      "mmsi": null,
+      "mmsi": "BOAT-489",
 
       "navy_type": "CIV",
 
@@ -280,11 +280,11 @@
 
       "track_id": 204,
 
-      "class": "FishingVessel",
+      "class": "Boat",
 
       "vessel_type": "POWER",
 
-      "mmsi": null,
+      "mmsi": "BOAT-261",
 
       "navy_type": "CIV",
 
