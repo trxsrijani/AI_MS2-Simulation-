@@ -60,7 +60,7 @@ own_ship_state = {
     "vessel_type": "POWER"   
 }
 
-ROUTE_SIM_API = "http://192.168.59.100:5002/route_simulation_state"
+ROUTE_SIM_API = "http://192.168.72.100:5002/route_simulation_state"
 
 def update_own_ship_loop():
     global own_ship_state
@@ -135,7 +135,8 @@ def relative_bearing(own, target):
     +ve = starboard
     -ve = port
     """
-
+    print("target_data:",target)
+    print("own_data:",own)
     # --- Position difference in meters ---
     dx, dy = latlon_to_xy(
         own["position_latlon"]["lat"],
@@ -143,17 +144,20 @@ def relative_bearing(own, target):
         target["position_latlon"]["lat"],
         target["position_latlon"]["lon"]
     )
+    print("----------dx,dy",dx,dy)
 
     # --- True bearing from own ship to target ---
     # atan2(East, North) to match marine convention
     true_bearing = math.atan2(dx, dy)
-
+    print("true_bearing",true_bearing)
     # --- Own ship heading ---
     own_heading = math.radians(own["cog_deg"])
+    print("own heading",own_heading)
 
     # --- Relative bearing ---
     rel_bearing_rad = normalize_angle_rad(true_bearing - own_heading)
-
+    print("rel_bearing_rad",rel_bearing_rad)
+    print("final output:",math.degrees(rel_bearing_rad))
     return math.degrees(rel_bearing_rad)
 
 def compute_cpa_tcpa(own, target):
@@ -190,6 +194,7 @@ def compute_cpa_tcpa(own, target):
         return math.hypot(dx, dy), float("inf")
 
     tcpa_sec = -r_dot_v / v_sq
+    tcpa_sec=abs(tcpa_sec)
     cpa_x = dx + rvx * tcpa_sec
     cpa_y = dy + rvy * tcpa_sec
 
@@ -206,7 +211,7 @@ def own_ship_ready():
     )
 
 def colregs_decision(sim_target, own_ship,rel_bearing):
-
+    
     dcpa = sim_target["cpa_m"]
     tcpa = sim_target["tcpa_min"]
     # dcpa, tcpa = compute_cpa_tcpa(own_ship, sim_target)
@@ -217,9 +222,33 @@ def colregs_decision(sim_target, own_ship,rel_bearing):
     # target_course = sim_target["course_deg_T"]
     target_course = sim_target["heading_deg_T"]
 
-    D_SAFE = 500
+    D_SAFE = 1000
     T_SAFE = 15
+    
 
+
+    # ================================
+    # RULE 19 – RESTRICTED VISIBILITY
+    # ================================
+    visibility = sim_target.get("visibility", "CLEAR")
+
+    if visibility.upper() == "RESTRICTED":
+
+        # If collision risk exists
+        if dcpa < 2000 and tcpa > 0:
+
+            return (
+                "⚠ RESTRICTED VISIBILITY (Rule 19) – "
+                "BOTH VESSELS MANEUVER – "
+                "REDUCE SPEED – "
+                "ALTER COURSE TO STARBOARD"
+            )
+        else:
+            return (
+                "⚠ RESTRICTED VISIBILITY – "
+                "PROCEED AT SAFE SPEED – "
+                "ENGINES READY"
+            )
     if not (dcpa < D_SAFE and 0 < tcpa < T_SAFE):
         return "✓ NO COLLISION RISK – MAINTAIN COURSE"
     
@@ -229,12 +258,12 @@ def colregs_decision(sim_target, own_ship,rel_bearing):
     heading_diff = abs((target_course - own_heading + 180) % 360 - 180)
 
 
-    if 112.5 < rel_bearing < 247.5:
+    if 112.5 < abs(rel_bearing) < 247.5:
         encounter = "OVERTAKING"
 
     # elif heading_diff > 150 and (rel_bearing < 10 or rel_bearing > 350):
     #     encounter = "HEAD_ON"
-    elif heading_diff > 150 and rel_bearing < 10:
+    elif heading_diff > 150 and abs(rel_bearing) < 10:
         encounter = "HEAD_ON"
 
     else:
@@ -515,9 +544,11 @@ def generate_frames():
 
                 if selected_object_id in track_metadata:
                     # print("------------------------------------>",track_metadata)
-                    sim_id = track_metadata[selected_object_id]["sim_id"]
-                    print("----------------------------track_metadata_id",sim_id)
-                    target = next((t for t in targets if t["object_id"] == sim_id), None)
+                    display_id = track_metadata[selected_object_id]["display_id"]
+
+                    target_id = f"target_{display_id:03d}"
+
+                    target = next((t for t in targets if t["object_id"] == target_id), None)
                     
                     if target and own_ship_ready():
 
@@ -555,11 +586,25 @@ def generate_frames():
                         dcpa, tcpa = compute_cpa_tcpa(own_for_cpa, target_for_cpa)
 
                         # --- Collision level ---
-                        collision = "GREEN"
-                        if dcpa < 500 and 0 < tcpa < 5:
+                        # collision = "GREEN"
+                        # if dcpa < 500 and 0 < tcpa < 5:
+                        #     collision = "RED"
+                        # elif dcpa < 1000 and 0 < tcpa < 15:
+                        #     collision = "YELLOW"
+                        if tcpa < 0:
+                            collision = "GREEN"
+
+                        elif dcpa < 100:
                             collision = "RED"
-                        elif dcpa < 1000 and 0 < tcpa < 15:
+
+                        elif dcpa < 500 and tcpa < 10:
+                            collision = "RED"
+
+                        elif dcpa < 1000 and tcpa < 15:
                             collision = "YELLOW"
+
+                        else:
+                            collision = "GREEN"
 
                         # --- Threat level ---
                         if collision == "RED":
@@ -596,6 +641,7 @@ def generate_frames():
 
                             "range": range_m,
                             "cpa": dcpa,
+                            "tcpa":tcpa,
 
                             "threat": threat,
                             "collision": collision,

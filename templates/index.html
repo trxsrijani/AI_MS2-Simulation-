@@ -321,7 +321,8 @@ body {
 }
 
 #routePanelHost input {
-    width: 100%;
+    width: 80%;
+    margin-left: 10%;
     margin-bottom: 6px;
     padding: 4px;
     background: #0b1c2d;
@@ -386,7 +387,7 @@ body {
 </div>
 
 <div id="miniMap">
-    <iframe id="routeFrame" src="http://192.168.59.100:5002/"></iframe>
+    <iframe id="routeFrame" src="http://192.168.72.100:5002/"></iframe>
 </div>
 
 
@@ -443,6 +444,8 @@ body {
 
     <div class="dataLine">Range: <span id="range">-</span> m</div>
     <div class="dataLine">CPA: <span id="cpa">-</span> m</div>
+    <div class="dataLine">TCPA: <span id="tcpa">-</span> min</div>
+
 
     <div class="dataLine">Threat: <span id="threat">-</span></div>
     <div class="dataLine">Collision: <span id="collision">-</span></div>
@@ -546,6 +549,8 @@ function updateSensorData() {
 
             document.getElementById("cpa").innerText =
                 data.cpa ? data.cpa.toFixed(1) : "-";
+            document.getElementById("tcpa").innerText =
+                data.tcpa ? data.tcpa.toFixed(1) : "-";
 
             document.getElementById("threat").innerText = data.threat || "-";
 
@@ -667,66 +672,6 @@ document.getElementById("clearRouteHost").onclick = () => {
   endLatHost.value = "";
   endLngHost.value = "";
 };
-
-// function updateOwnShip() {
-
-// fetch("http://192.168.59.100:5002/route_simulation_state")
-//     .then(response => response.json())
-//     .then(data => {
-
-//         // Extract live_state only
-//         const liveState = data.live_state;
-
-//         // Show full live_state JSON
-//         document.getElementById("own_ship_raw").innerText =
-//             JSON.stringify(liveState, null, 2);
-
-//     })
-//     .catch(error => {
-//         document.getElementById("own_ship_raw").innerText =
-//             "API ERROR / NOT REACHABLE";
-//         console.error("Own Ship API Error:", error);
-//     });
-// }
-
-// // Refresh every 100ms
-// setInterval(updateOwnShip, 100);
-
-// function updateOwnShip() {
-
-// fetch("http://192.168.59.100:5002/route_simulation_state")
-//     .then(response => response.json())
-//     .then(data => {
-
-//         // Show raw for debug
-//         document.getElementById("own_ship_raw").innerText =
-//             JSON.stringify(data.live_state, null, 2);
-
-//         // 🔥 Send to backend to store
-//         return fetch("/update_own_ship", {
-//             method: "POST",
-//             headers: {
-//                 "Content-Type": "application/json"
-//             },
-//             body: JSON.stringify(data)
-//         });
-
-//     })
-//     .then(res => res.json())
-//     .then(result => {
-//         console.log("Backend store status:", result.status);
-//     })
-//     .catch(error => {
-//         document.getElementById("own_ship_raw").innerText =
-//             "API ERROR / NOT REACHABLE";
-//         console.error("Own Ship Flow Error:", error);
-//     });
-// }
-
-// setInterval(updateOwnShip, 100);
-
-
-
 
 // Trigger on first click anywhere
 document.addEventListener("click", function enableFS() {
