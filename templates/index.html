@@ -387,7 +387,9 @@ body {
 </div>
 
 <div id="miniMap">
-    <iframe id="routeFrame" src="http://192.168.72.100:5002/"></iframe>
+    <!-- <iframe id="routeFrame" src="http://192.168.72.100:5002/"></iframe> -->
+    <iframe id="routeFrame" src="http://192.168.43.196:5002/"></iframe>
+
 </div>
 
 
@@ -435,6 +437,7 @@ body {
     <div class="dataLine">Class: <span id="class">-</span></div>
     <div class="dataLine">MMSI: <span id="mmsi">-</span></div>
     <div class="dataLine">Navy Type: <span id="navy_type">-</span></div>
+    <div class="dataLine">Visibility: <span id="visibility">-</span></div>
 
     <div class="dataLine">Bearing (True): <span id="bearing_degree">-</span> °</div>
     <div class="dataLine">Bearing (Relative): <span id="bearing_relative_degree">-</span> °</div>
@@ -442,8 +445,8 @@ body {
     <div class="dataLine">Speed: <span id="speed">-</span> kts</div>
     <div class="dataLine">Course: <span id="course">-</span> °T</div>
 
-    <div class="dataLine">Range: <span id="range">-</span> m</div>
-    <div class="dataLine">CPA: <span id="cpa">-</span> m</div>
+    <div class="dataLine">Range: <span id="range">-</span> nm</div>
+    <div class="dataLine">CPA: <span id="cpa">-</span> nm</div>
     <div class="dataLine">TCPA: <span id="tcpa">-</span> min</div>
 
 
@@ -528,6 +531,7 @@ function updateSensorData() {
             document.getElementById("class").innerText = data.class || "-";
             document.getElementById("mmsi").innerText = data.mmsi || "-";
             document.getElementById("navy_type").innerText = data.navy_type || "-";
+            document.getElementById("visibility").innerText = data.visibility || "-";
 
             // Bearings
             document.getElementById("bearing_degree").innerText =
